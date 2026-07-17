@@ -1,2 +1,3 @@
-# Zapchasti
-Volkswagen_car_parts_website
+# Zemazap
+
+MVP-витрина магазина заводских автозапчастей Zemazap.

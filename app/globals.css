@@ -102,18 +102,14 @@ button,
   display: inline-flex;
   align-items: center;
   gap: 12px;
-  min-width: 230px;
+  min-width: 260px;
 }
 
-.brand__mark {
-  display: grid;
-  place-items: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
-  color: #fff;
-  background: var(--accent);
-  font-weight: 800;
+.brand__logo {
+  display: block;
+  width: 142px;
+  height: 38px;
+  object-fit: contain;
 }
 
 .brand strong,

@@ -4,8 +4,8 @@ import { Clock, MapPin, MessageCircle, Phone, ShoppingCart } from "lucide-react"
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Заводские автозапчасти | MVP витрина",
-  description: "MVP интернет-витрины для подбора новых заводских автозапчастей по OEM, артикулу, авто или VIN."
+  title: "Zemazap | Заводские автозапчасти",
+  description: "Zemazap: интернет-витрина для подбора новых заводских автозапчастей по OEM, артикулу, авто или VIN."
 };
 
 const navItems = [
@@ -45,10 +45,10 @@ export default function RootLayout({
 
           <div className="mainnav">
             <Link className="brand" href="/" aria-label="На главную">
-              <span className="brand__mark">OEM</span>
+              <img className="brand__logo" src="/zemazap-logo.svg" alt="Zemazap" />
               <span>
-                <strong>Заводские запчасти</strong>
-                <small>MVP витрина</small>
+                <strong>Zemazap</strong>
+                <small>заводские автозапчасти</small>
               </span>
             </Link>
 
@@ -71,7 +71,7 @@ export default function RootLayout({
 
         <footer className="site-footer">
           <div>
-            <strong>Заводские запчасти</strong>
+            <strong>Zemazap</strong>
             <p>Новые детали, OEM-номера, заводские аналоги и ручное подтверждение применимости.</p>
           </div>
           <div className="site-footer__links">

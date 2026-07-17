@@ -4,8 +4,8 @@ export default function ContactsPage() {
   return (
     <main className="page-shell">
       <section className="page-heading">
-        <p className="eyebrow">Контакты</p>
-        <h1>Данные магазина будут уточнены</h1>
+        <p className="eyebrow">Контакты Zemazap</p>
+        <h1>Данные магазина Zemazap будут уточнены</h1>
         <p>
           Эта страница оставлена как рабочая заготовка: после выбора города, адреса, телефона и почты
           данные попадут в шапку, футер, микроразметку и формы заявок.

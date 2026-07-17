@@ -6,8 +6,8 @@ export default function CatalogPage() {
   return (
     <main className="page-shell">
       <section className="page-heading">
-        <p className="eyebrow">Каталог MVP</p>
-        <h1>Автозапчасти, категории и тестовые товары</h1>
+        <p className="eyebrow">Каталог Zemazap</p>
+        <h1>Автозапчасти, категории и тестовые товары Zemazap</h1>
         <p>
           Здесь будет основной каталог с URL по маркам, моделям и категориям. Пока страница работает как
           витрина структуры и первых тестовых позиций.

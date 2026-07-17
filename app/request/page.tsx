@@ -5,8 +5,8 @@ export default function RequestPage() {
   return (
     <main className="page-shell">
       <section className="page-heading">
-        <p className="eyebrow">Корзина-заявка</p>
-        <h1>Запрос на подбор или подтверждение заказа</h1>
+        <p className="eyebrow">Корзина-заявка Zemazap</p>
+        <h1>Запрос на подбор или подтверждение заказа в Zemazap</h1>
         <p>
           На старте заявки можно обрабатывать вручную: клиент оставляет контакты, VIN или артикулы, а
           менеджер подтверждает применимость, цену и срок поставки.

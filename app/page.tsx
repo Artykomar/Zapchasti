@@ -16,7 +16,7 @@ import { useMemo, useState } from "react";
 
 const quickStats = [
   { label: "OEM и артикулы", value: "поиск" },
-  { label: "Заводские аналоги", value: "MVP" },
+  { label: "Zemazap каталог", value: "MVP" },
   { label: "Подтверждение", value: "менеджер" }
 ];
 
@@ -68,8 +68,8 @@ export default function HomePage() {
         <div className="hero__overlay" />
         <div className="hero__content hero__content--market">
           <div className="hero__copy">
-            <p className="eyebrow">MVP витрина новых автозапчастей</p>
-            <h1>Заводские запчасти по OEM, артикулу и автомобилю</h1>
+            <p className="eyebrow">Zemazap: MVP витрина новых автозапчастей</p>
+            <h1>Zemazap подбирает заводские запчасти по OEM, артикулу и автомобилю</h1>
             <p>
               Поиск по номеру детали, подбор по автомобилю и заявка менеджеру для подтверждения
               применимости, цены и срока поставки.
