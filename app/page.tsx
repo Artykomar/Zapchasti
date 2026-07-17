@@ -1,7 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Car, CheckCircle2, ClipboardList, Cog, Search, ShieldCheck } from "lucide-react";
+import {
+  ArrowRight,
+  Car,
+  CheckCircle2,
+  ClipboardList,
+  Cog,
+  Search,
+  ShieldCheck,
+  Wrench
+} from "lucide-react";
 import { brands, categories, formatPrice, parts } from "@/src/data/catalog";
 import { useMemo, useState } from "react";
 
@@ -15,8 +24,10 @@ export default function HomePage() {
   const [query, setQuery] = useState("");
   const [brand, setBrand] = useState(brands[0].name);
   const [model, setModel] = useState(brands[0].models[0].name);
+  const [generation, setGeneration] = useState(brands[0].models[0].generations[0]);
 
   const selectedBrand = brands.find((item) => item.name === brand) ?? brands[0];
+  const selectedModel = selectedBrand.models.find((item) => item.name === model) ?? selectedBrand.models[0];
 
   const filteredParts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -48,54 +59,110 @@ export default function HomePage() {
 
   return (
     <main>
-      <section className="hero">
-        <div className="hero__blueprint" aria-hidden="true">
-          <div className="blueprint-board">
-            <div className="blueprint-board__header">
-              <span>OEM</span>
-              <span>Каталог MVP</span>
-            </div>
-            <div className="blueprint-board__grid">
-              <span>Brand</span>
-              <span>Model</span>
-              <span>Part</span>
-              <span>Offer</span>
-            </div>
-            <div className="blueprint-board__lines">
-              <i />
-              <i />
-              <i />
-              <i />
-            </div>
-          </div>
+      <section className="hero hero--market">
+        <div className="gear-backdrop" aria-hidden="true">
+          <span className="gear gear--one" />
+          <span className="gear gear--two" />
+          <span className="gear gear--three" />
         </div>
         <div className="hero__overlay" />
-        <div className="hero__content">
+        <div className="hero__content hero__content--market">
           <div className="hero__copy">
             <p className="eyebrow">MVP витрина новых автозапчастей</p>
             <h1>Заводские запчасти по OEM, артикулу и автомобилю</h1>
             <p>
-              Первый рабочий каркас магазина: поиск, подбор авто, карточки товаров и заявка менеджеру
-              для подтверждения цены, срока и применимости.
+              Поиск по номеру детали, подбор по автомобилю и заявка менеджеру для подтверждения
+              применимости, цены и срока поставки.
             </p>
+            <div className="hero-actions">
+              <Link href="/catalog">
+                <Search size={18} aria-hidden="true" />
+                Каталог
+              </Link>
+              <Link href="/request">
+                <Wrench size={18} aria-hidden="true" />
+                Подбор по VIN
+              </Link>
+            </div>
           </div>
 
-          <form className="search-panel" action="/catalog">
-            <label htmlFor="global-search">Номер, OEM, название или аналог</label>
-            <div className="search-row">
-              <Search size={20} aria-hidden="true" />
+          <form className="parts-search" action="/catalog">
+            <div className="parts-search__head">
+              <Search size={22} aria-hidden="true" />
+              <div>
+                <h2>Поиск автозапчастей</h2>
+                <p>Введите номер или выберите автомобиль</p>
+              </div>
+            </div>
+
+            <label className="parts-search__query" htmlFor="global-search">
+              Номер, OEM, артикул или название
               <input
                 id="global-search"
                 name="q"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Например: 8W0615301T или тормозной диск"
+                placeholder="Например: 8W0615301T"
               />
-              <button type="submit">
-                <span>Искать</span>
-                <ArrowRight size={18} aria-hidden="true" />
-              </button>
+            </label>
+
+            <div className="parts-search__grid">
+              <label>
+                Марка
+                <select
+                  name="brand"
+                  value={brand}
+                  onChange={(event) => {
+                    const nextBrand = event.target.value;
+                    const nextModels = brands.find((item) => item.name === nextBrand)?.models ?? [];
+                    const nextModel = nextModels[0];
+                    setBrand(nextBrand);
+                    setModel(nextModel?.name ?? "");
+                    setGeneration(nextModel?.generations[0] ?? "");
+                  }}
+                >
+                  {brands.map((item) => (
+                    <option key={item.name}>{item.name}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label>
+                Модель
+                <select
+                  name="model"
+                  value={model}
+                  onChange={(event) => {
+                    const nextModelName = event.target.value;
+                    const nextModel = selectedBrand.models.find((item) => item.name === nextModelName);
+                    setModel(nextModelName);
+                    setGeneration(nextModel?.generations[0] ?? "");
+                  }}
+                >
+                  {selectedBrand.models.map((item) => (
+                    <option key={item.name}>{item.name}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label>
+                Поколение
+                <select
+                  name="generation"
+                  value={generation}
+                  onChange={(event) => setGeneration(event.target.value)}
+                >
+                  {selectedModel.generations.map((item) => (
+                    <option key={item}>{item}</option>
+                  ))}
+                </select>
+              </label>
             </div>
+
+            <button type="submit" className="parts-search__submit">
+              Найти запчасти
+              <ArrowRight size={18} aria-hidden="true" />
+            </button>
           </form>
         </div>
       </section>
@@ -123,8 +190,10 @@ export default function HomePage() {
               onChange={(event) => {
                 const nextBrand = event.target.value;
                 const nextModels = brands.find((item) => item.name === nextBrand)?.models ?? [];
+                const nextModel = nextModels[0];
                 setBrand(nextBrand);
-                setModel(nextModels[0]?.name ?? "");
+                setModel(nextModel?.name ?? "");
+                setGeneration(nextModel?.generations[0] ?? "");
               }}
             >
               {brands.map((item) => (
@@ -135,9 +204,26 @@ export default function HomePage() {
 
           <label>
             Модель
-            <select value={model} onChange={(event) => setModel(event.target.value)}>
+            <select
+              value={model}
+              onChange={(event) => {
+                const nextModelName = event.target.value;
+                const nextModel = selectedBrand.models.find((item) => item.name === nextModelName);
+                setModel(nextModelName);
+                setGeneration(nextModel?.generations[0] ?? "");
+              }}
+            >
               {selectedBrand.models.map((item) => (
                 <option key={item.name}>{item.name}</option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            Поколение
+            <select value={generation} onChange={(event) => setGeneration(event.target.value)}>
+              {selectedModel.generations.map((item) => (
+                <option key={item}>{item}</option>
               ))}
             </select>
           </label>
@@ -145,9 +231,19 @@ export default function HomePage() {
           <div className="vehicle-summary">
             <Car size={20} aria-hidden="true" />
             <span>
-              {brand} {model}: {selectedBrand.models.find((item) => item.name === model)?.years}
+              {brand} {model} {generation}: {selectedModel.years}
             </span>
           </div>
+        </div>
+      </section>
+
+      <section className="workspace workspace--compact">
+        <div className="brand-cloud" aria-label="Популярные марки">
+          {brands.map((item) => (
+            <Link key={item.name} href="/catalog">
+              {item.name}
+            </Link>
+          ))}
         </div>
       </section>
 
