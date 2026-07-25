@@ -1,14 +1,15 @@
-import { Clock, Mail, MapPin, Phone } from "lucide-react";
+import Link from "next/link";
+import { Clock, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 
 export default function ContactsPage() {
   return (
     <main className="page-shell">
       <section className="page-heading">
         <p className="eyebrow">Контакты Zemazap</p>
-        <h1>Данные магазина Zemazap будут уточнены</h1>
+        <h1>Контакты магазина будут заполнены перед запуском</h1>
         <p>
-          Эта страница оставлена как рабочая заготовка: после выбора города, адреса, телефона и почты
-          данные попадут в шапку, футер, микроразметку и формы заявок.
+          Страница готова под реальные телефон, почту, мессенджеры, адрес склада и юридические
+          реквизиты. Пока здесь стоят безопасные заглушки, чтобы не публиковать случайные данные.
         </p>
       </section>
 
@@ -24,15 +25,29 @@ export default function ContactsPage() {
           <p>orders@example.ru</p>
         </div>
         <div className="contact-item">
-          <MapPin size={24} aria-hidden="true" />
-          <h2>Регион</h2>
-          <p>Город и адрес нужно выбрать</p>
+          <MessageCircle size={24} aria-hidden="true" />
+          <h2>Мессенджеры</h2>
+          <p>Telegram и WhatsApp будут добавлены после выбора рабочих номеров.</p>
         </div>
         <div className="contact-item">
           <Clock size={24} aria-hidden="true" />
           <h2>График</h2>
-          <p>Будет задан после этапа требований</p>
+          <p>Будет задан после подтверждения региона и формата склада.</p>
         </div>
+      </section>
+
+      <section className="contact-wide">
+        <div>
+          <MapPin size={26} aria-hidden="true" />
+          <h2>Склад и выдача</h2>
+          <p>
+            Адрес, схема проезда и карта появятся после выбора города. Для доставки можно будет
+            оставить пункт выдачи или адрес транспортной компании в заявке.
+          </p>
+        </div>
+        <Link className="secondary-action" href="/request">
+          Оставить заявку
+        </Link>
       </section>
 
       <section className="map-placeholder" aria-label="Карта">

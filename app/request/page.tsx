@@ -1,15 +1,15 @@
 import Link from "next/link";
-import { MessageCircle, Send, ShieldCheck } from "lucide-react";
+import { MessageCircle, PackageSearch, Send, ShieldCheck } from "lucide-react";
 
 export default function RequestPage() {
   return (
     <main className="page-shell">
       <section className="page-heading">
-        <p className="eyebrow">Корзина-заявка Zemazap</p>
-        <h1>Запрос на подбор или подтверждение заказа в Zemazap</h1>
+        <p className="eyebrow">Заявка Zemazap</p>
+        <h1>Запрос на подбор или подтверждение заказа</h1>
         <p>
-          На старте заявки можно обрабатывать вручную: клиент оставляет контакты, VIN или артикулы, а
-          менеджер подтверждает применимость, цену и срок поставки.
+          На старте заявки обрабатываются вручную: клиент оставляет контакты, номера деталей,
+          артикулы или данные автомобиля, а менеджер подтверждает наличие, состояние и срок.
         </p>
       </section>
 
@@ -24,12 +24,12 @@ export default function RequestPage() {
             <input name="phone" placeholder="+7 (___) ___-__-__" />
           </label>
           <label>
-            VIN или данные автомобиля
-            <input name="vehicle" placeholder="VIN, марка, модель, год, двигатель" />
+            Автомобиль
+            <input name="vehicle" placeholder="Марка, модель, год, двигатель или модификация" />
           </label>
           <label>
             Что нужно найти
-            <textarea name="parts" placeholder="OEM, артикулы, названия деталей или описание задачи" />
+            <textarea name="parts" placeholder="Номер детали, артикул, название, фото/описание или список позиций" />
           </label>
           <label className="checkbox-row">
             <input type="checkbox" name="privacy" />
@@ -45,12 +45,16 @@ export default function RequestPage() {
           <ShieldCheck size={30} aria-hidden="true" />
           <h2>Что проверит менеджер</h2>
           <ul>
-            <li>применимость детали к автомобилю;</li>
+            <li>номер детали, артикул и совместимость;</li>
             <li>актуальную цену и срок у поставщиков;</li>
-            <li>оригинал или заводской аналог;</li>
-            <li>условия гарантии и возврата для новой детали.</li>
+            <li>состояние, комплектность и фото для контрактных деталей;</li>
+            <li>условия резерва, гарантии и возврата.</li>
           </ul>
-          <Link href="/contacts">
+          <Link href="/cart">
+            <PackageSearch size={18} aria-hidden="true" />
+            Открыть корзину
+          </Link>
+          <Link href="/contacts" className="request-aside__ghost">
             <MessageCircle size={18} aria-hidden="true" />
             Связаться напрямую
           </Link>

@@ -1,8 +1,33 @@
 <svg width="360" height="96" viewBox="0 0 360 96" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
   <title id="title">Zemazap logo</title>
-  <desc id="desc">Wordmark Zemazap with horizontal lightning bolts above and below.</desc>
-  <rect width="360" height="96" rx="8" fill="none"/>
-  <path d="M18 14H144L124 28H238L220 42H342" stroke="#C5162E" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
-  <text x="180" y="61" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="800" letter-spacing="0" fill="#1D252B">Zemazap</text>
-  <path d="M342 82H216L236 68H122L140 54H18" stroke="#167F86" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <desc id="desc">Blue neon angular Zemazap wordmark without lightning symbols.</desc>
+  <defs>
+    <linearGradient id="zemazap-neon" x1="36" y1="16" x2="324" y2="76" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#D9FBFF"/>
+      <stop offset="0.35" stop-color="#39D8FF"/>
+      <stop offset="0.7" stop-color="#1D78FF"/>
+      <stop offset="1" stop-color="#082B9D"/>
+    </linearGradient>
+    <filter id="soft-glow" x="-20%" y="-70%" width="140%" height="240%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="0" stdDeviation="2.5" flood-color="#42E4FF" flood-opacity="0.95"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#136DFF" flood-opacity="0.65"/>
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#031241" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+  <text
+    x="180"
+    y="64"
+    text-anchor="middle"
+    font-family="Arial Black, Impact, Arial, Helvetica, sans-serif"
+    font-size="48"
+    font-style="italic"
+    font-weight="900"
+    letter-spacing="0"
+    fill="url(#zemazap-neon)"
+    stroke="#061A35"
+    stroke-width="1.8"
+    paint-order="stroke fill"
+    filter="url(#soft-glow)"
+    transform="translate(180 48) skewX(-7) translate(-180 -48)"
+  >Zemazap</text>
 </svg>
