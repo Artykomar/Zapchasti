@@ -125,6 +125,13 @@ export const schemaStatements = [
     quantity INTEGER NOT NULL DEFAULT 1,
     price_snapshot_rub INTEGER NOT NULL DEFAULT 0
   )`,
+  `CREATE TABLE IF NOT EXISTS customer_request_events (
+    id TEXT PRIMARY KEY,
+    request_id TEXT NOT NULL REFERENCES customer_requests(id) ON DELETE CASCADE,
+    event_type TEXT NOT NULL,
+    note TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`,
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_brands_slug ON brands(slug)`,
   `CREATE INDEX IF NOT EXISTS idx_car_models_brand ON car_models(brand_id, slug)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_categories_slug ON categories(slug)`,
@@ -134,5 +141,6 @@ export const schemaStatements = [
   `CREATE INDEX IF NOT EXISTS idx_parts_search_text ON parts(search_text)`,
   `CREATE INDEX IF NOT EXISTS idx_part_numbers_value ON part_numbers(normalized_value)`,
   `CREATE INDEX IF NOT EXISTS idx_price_offers_part_primary ON price_offers(part_id, is_primary)`,
-  `CREATE INDEX IF NOT EXISTS idx_customer_requests_status_created ON customer_requests(status, created_at)`
+  `CREATE INDEX IF NOT EXISTS idx_customer_requests_status_created ON customer_requests(status, created_at)`,
+  `CREATE INDEX IF NOT EXISTS idx_customer_request_events_request ON customer_request_events(request_id, created_at)`
 ];

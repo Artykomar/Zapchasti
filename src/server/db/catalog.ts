@@ -50,6 +50,50 @@ export type CustomerRequestInput = {
   items?: CustomerRequestItemInput[];
 };
 
+export type CustomerRequestStatus = "new" | "in_work" | "waiting_customer" | "done" | "cancelled";
+
+export type AdminCustomerRequestItem = {
+  id: string;
+  partId: string | null;
+  partName: string;
+  article: string;
+  quantity: number;
+  priceSnapshotRub: number;
+};
+
+export type AdminCustomerRequestEvent = {
+  id: string;
+  eventType: string;
+  note: string;
+  createdAt: string;
+};
+
+export type AdminCustomerRequest = {
+  id: string;
+  status: CustomerRequestStatus;
+  source: CustomerRequestInput["source"];
+  customerName: string;
+  contact: string;
+  vehicle: string;
+  requestText: string;
+  privacyAccepted: boolean;
+  totalEstimateRub: number;
+  createdAt: string;
+  updatedAt: string;
+  items: AdminCustomerRequestItem[];
+  events: AdminCustomerRequestEvent[];
+};
+
+export type AdminDashboardStats = {
+  totalRequests: number;
+  newRequests: number;
+  inWorkRequests: number;
+  doneRequests: number;
+  products: number;
+  brands: number;
+  categories: number;
+};
+
 type BrandRow = {
   id: string;
   slug: string;
@@ -105,6 +149,36 @@ type TextValueRow = {
   name?: string;
   value?: string;
   label?: string;
+};
+
+type AdminRequestRow = {
+  id: string;
+  status: CustomerRequestStatus;
+  source: CustomerRequestInput["source"];
+  customer_name: string;
+  contact: string;
+  vehicle: string;
+  request_text: string;
+  privacy_accepted: number;
+  total_estimate_rub: number;
+  created_at: string;
+  updated_at: string;
+};
+
+type AdminRequestItemRow = {
+  id: string;
+  part_id: string | null;
+  part_name: string;
+  article: string;
+  quantity: number;
+  price_snapshot_rub: number;
+};
+
+type AdminRequestEventRow = {
+  id: string;
+  event_type: string;
+  note: string;
+  created_at: string;
 };
 
 const DEMO_SUPPLIER_ID = "zemazap-demo-supplier";
@@ -591,6 +665,10 @@ export const createCustomerRequest = (input: CustomerRequestInput) => {
      )
      VALUES (?, ?, ?, ?, ?, ?, ?)`
   );
+  const insertEvent = db.prepare(
+    `INSERT INTO customer_request_events (id, request_id, event_type, note, created_at)
+     VALUES (?, ?, 'created', ?, datetime('now'))`
+  );
   const partExists = db.prepare("SELECT id FROM parts WHERE id = ? LIMIT 1");
 
   db.exec("BEGIN");
@@ -618,6 +696,11 @@ export const createCustomerRequest = (input: CustomerRequestInput) => {
         Math.max(0, Math.round(item.price ?? 0))
       );
     });
+    insertEvent.run(
+      randomUUID(),
+      id,
+      input.source === "cart" ? "Заявка создана из корзины" : "Заявка создана из формы подбора"
+    );
 
     db.exec("COMMIT");
   } catch (error) {
@@ -630,4 +713,118 @@ export const createCustomerRequest = (input: CustomerRequestInput) => {
     status: "new",
     totalEstimateRub
   };
+};
+
+const mapAdminRequest = (db: DatabaseSync, row: AdminRequestRow): AdminCustomerRequest => {
+  const itemRows = db
+    .prepare(
+      `SELECT id, part_id, part_name, article, quantity, price_snapshot_rub
+       FROM customer_request_items
+       WHERE request_id = ?
+       ORDER BY id`
+    )
+    .all(row.id) as AdminRequestItemRow[];
+  const eventRows = db
+    .prepare(
+      `SELECT id, event_type, note, created_at
+       FROM customer_request_events
+       WHERE request_id = ?
+       ORDER BY created_at DESC`
+    )
+    .all(row.id) as AdminRequestEventRow[];
+
+  return {
+    id: row.id,
+    status: row.status,
+    source: row.source,
+    customerName: row.customer_name,
+    contact: row.contact,
+    vehicle: row.vehicle,
+    requestText: row.request_text,
+    privacyAccepted: row.privacy_accepted === 1,
+    totalEstimateRub: row.total_estimate_rub,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    items: itemRows.map((item) => ({
+      id: item.id,
+      partId: item.part_id,
+      partName: item.part_name,
+      article: item.article,
+      quantity: item.quantity,
+      priceSnapshotRub: item.price_snapshot_rub
+    })),
+    events: eventRows.map((event) => ({
+      id: event.id,
+      eventType: event.event_type,
+      note: event.note,
+      createdAt: event.created_at
+    }))
+  };
+};
+
+export const getAdminCustomerRequests = (status?: string): AdminCustomerRequest[] => {
+  const db = getDatabase();
+  const normalizedStatus = status?.trim();
+  const sql = normalizedStatus
+    ? `SELECT id, status, source, customer_name, contact, vehicle, request_text, privacy_accepted,
+         total_estimate_rub, created_at, updated_at
+       FROM customer_requests
+       WHERE status = ?
+       ORDER BY created_at DESC`
+    : `SELECT id, status, source, customer_name, contact, vehicle, request_text, privacy_accepted,
+         total_estimate_rub, created_at, updated_at
+       FROM customer_requests
+       ORDER BY created_at DESC`;
+  const rows = normalizedStatus
+    ? (db.prepare(sql).all(normalizedStatus) as AdminRequestRow[])
+    : (db.prepare(sql).all() as AdminRequestRow[]);
+
+  return rows.map((row) => mapAdminRequest(db, row));
+};
+
+export const getAdminDashboardStats = (): AdminDashboardStats => {
+  const db = getDatabase();
+  const count = (sql: string, value?: string) => {
+    const row = value
+      ? (db.prepare(sql).get(value) as { count: number })
+      : (db.prepare(sql).get() as { count: number });
+    return row.count;
+  };
+
+  return {
+    totalRequests: count("SELECT COUNT(*) AS count FROM customer_requests"),
+    newRequests: count("SELECT COUNT(*) AS count FROM customer_requests WHERE status = ?", "new"),
+    inWorkRequests: count("SELECT COUNT(*) AS count FROM customer_requests WHERE status = ?", "in_work"),
+    doneRequests: count("SELECT COUNT(*) AS count FROM customer_requests WHERE status = ?", "done"),
+    products: count("SELECT COUNT(*) AS count FROM parts"),
+    brands: count("SELECT COUNT(*) AS count FROM brands"),
+    categories: count("SELECT COUNT(*) AS count FROM categories")
+  };
+};
+
+export const updateCustomerRequestStatus = (
+  requestId: string,
+  status: CustomerRequestStatus,
+  note: string
+) => {
+  const db = getDatabase();
+  const updateRequest = db.prepare(
+    `UPDATE customer_requests
+     SET status = ?, updated_at = datetime('now')
+     WHERE id = ?`
+  );
+  const insertEvent = db.prepare(
+    `INSERT INTO customer_request_events (id, request_id, event_type, note, created_at)
+     VALUES (?, ?, 'status_changed', ?, datetime('now'))`
+  );
+
+  db.exec("BEGIN");
+  try {
+    updateRequest.run(status, requestId);
+    insertEvent.run(randomUUID(), requestId, note);
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
 };

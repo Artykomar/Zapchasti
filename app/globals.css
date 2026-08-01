@@ -1321,6 +1321,351 @@ dd {
   font-weight: 800;
 }
 
+.admin-auth-shell,
+.admin-shell {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 56px 24px 0;
+}
+
+.admin-auth-shell {
+  display: grid;
+  min-height: 70vh;
+  place-items: center;
+}
+
+.admin-auth-panel,
+.admin-panel,
+.admin-stat,
+.admin-request-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.admin-auth-panel {
+  display: grid;
+  gap: 14px;
+  width: min(100%, 520px);
+  padding: 28px;
+}
+
+.admin-auth-panel svg {
+  color: var(--teal);
+}
+
+.admin-auth-panel h1,
+.admin-head h1 {
+  margin-bottom: 10px;
+  font-size: clamp(34px, 5vw, 56px);
+}
+
+.admin-login-form {
+  display: grid;
+  gap: 14px;
+}
+
+.admin-login-form label {
+  display: grid;
+  gap: 8px;
+  color: var(--steel);
+  font-weight: 800;
+}
+
+.admin-login-form input {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 12px;
+}
+
+.admin-login-form button,
+.admin-primary-button,
+.admin-ghost-button,
+.admin-request-card__actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  border-radius: 8px;
+  font-weight: 800;
+}
+
+.admin-login-form button,
+.admin-primary-button {
+  border: 0;
+  color: #fff;
+  background: var(--accent);
+}
+
+.admin-login-form button {
+  width: 100%;
+}
+
+.admin-ghost-button {
+  border: 1px solid var(--line);
+  padding: 0 16px;
+  color: var(--teal-dark);
+  background: var(--surface);
+}
+
+.admin-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.admin-head p {
+  max-width: 760px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.admin-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.admin-stat {
+  display: grid;
+  gap: 8px;
+  min-height: 120px;
+  padding: 16px;
+}
+
+.admin-stat svg {
+  color: var(--teal);
+}
+
+.admin-stat strong {
+  color: var(--accent);
+  font-size: 30px;
+}
+
+.admin-stat span,
+.admin-request-row span,
+.admin-roadmap li,
+.admin-request-card p,
+.admin-request-card__head span,
+.admin-events p {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.admin-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 22px;
+}
+
+.admin-panel {
+  padding: 22px;
+}
+
+.admin-panel__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.admin-panel__head h2,
+.admin-request-card h2 {
+  margin-bottom: 6px;
+  font-size: 24px;
+}
+
+.admin-primary-button {
+  padding: 0 16px;
+}
+
+.admin-request-list {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-request-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.6fr);
+  gap: 18px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.admin-request-row h3 {
+  margin: 8px 0 4px;
+}
+
+.admin-request-row p {
+  margin: 0;
+}
+
+.admin-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 9px;
+  border-radius: 8px;
+  color: var(--steel);
+  background: var(--surface-soft);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.admin-status--new {
+  color: #fff;
+  background: var(--accent);
+}
+
+.admin-status--in_work {
+  color: #fff;
+  background: var(--teal);
+}
+
+.admin-status--waiting_customer {
+  color: var(--dark);
+  background: #f3d178;
+}
+
+.admin-status--done {
+  color: #fff;
+  background: var(--steel);
+}
+
+.admin-status--cancelled {
+  color: var(--muted);
+  background: var(--line);
+}
+
+.admin-roadmap ul {
+  display: grid;
+  gap: 10px;
+  padding-left: 20px;
+  margin-bottom: 0;
+}
+
+.admin-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.admin-filter a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--steel);
+  background: var(--surface);
+  font-weight: 800;
+}
+
+.admin-filter a.is-active {
+  color: #fff;
+  border-color: var(--teal);
+  background: var(--teal);
+}
+
+.admin-requests-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-request-card {
+  overflow: hidden;
+}
+
+.admin-request-card__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.admin-request-card__head a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--teal-dark);
+  font-weight: 800;
+}
+
+.admin-request-card__head > div:last-child {
+  display: grid;
+  gap: 6px;
+  justify-items: end;
+}
+
+.admin-request-card__body {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+}
+
+.admin-items {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-items div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.admin-request-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 18px 18px;
+}
+
+.admin-request-card__actions button {
+  border: 1px solid var(--line);
+  padding: 0 12px;
+  color: var(--teal-dark);
+  background: var(--surface);
+}
+
+.admin-request-card__actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.admin-events {
+  border-top: 1px solid var(--line);
+  padding: 14px 18px 18px;
+  background: #fafafa;
+}
+
+.admin-events summary {
+  cursor: pointer;
+  color: var(--steel);
+  font-weight: 800;
+}
+
+.admin-events p {
+  margin: 10px 0 0;
+}
+
 @media (max-width: 980px) {
   .topline {
     justify-content: flex-start;
@@ -1354,6 +1699,7 @@ dd {
   .quick-stats,
   .vehicle-picker,
   .workspace--split,
+  .admin-layout,
   .catalog-layout,
   .request-layout,
   .cart-layout,
@@ -1364,6 +1710,7 @@ dd {
   .category-grid,
   .product-grid,
   .contact-grid,
+  .admin-stat-grid,
   .info-grid,
   .info-grid--four,
   .review-grid,
@@ -1441,6 +1788,8 @@ dd {
   }
 
   .quick-stats,
+  .admin-stat-grid,
+  .admin-layout,
   .category-grid,
   .product-grid,
   .contact-grid,
@@ -1454,6 +1803,22 @@ dd {
   .related-grid,
   .cart-item,
   .spec-table div {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-head,
+  .admin-panel__head,
+  .admin-request-card__head,
+  .admin-items div {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-request-card__head > div:last-child {
+    justify-items: start;
+  }
+
+  .admin-request-row {
     grid-template-columns: 1fr;
   }
 
