@@ -28,7 +28,13 @@ export default function CartContents() {
   const [items, setItems] = useState<StoredCatalogItem[]>([]);
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
-  const [sent, setSent] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [submitState, setSubmitState] = useState<
+    | { status: "idle" }
+    | { status: "sending" }
+    | { status: "success"; requestId: string }
+    | { status: "error"; message: string }
+  >({ status: "idle" });
 
   useEffect(() => {
     const sync = () => setItems(readCart());
@@ -59,6 +65,54 @@ export default function CartContents() {
     const next = items.filter((item) => item.id !== id);
     setItems(next);
     writeCart(next);
+  };
+
+  const submitCartRequest = async () => {
+    setSubmitState({ status: "sending" });
+
+    try {
+      const response = await fetch("/api/requests", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          source: "cart",
+          customerName: name,
+          contact,
+          privacyAccepted,
+          requestText: "Корзина-заявка с сайта",
+          items: items.map((item) => ({
+            id: item.id,
+            name: item.name,
+            article: item.article,
+            quantity: item.quantity,
+            price: item.price
+          }))
+        })
+      });
+      const result = (await response.json()) as { id?: string; error?: string };
+
+      if (!response.ok || !result.id) {
+        setSubmitState({
+          status: "error",
+          message: result.error ?? "Не удалось сохранить заявку"
+        });
+        return;
+      }
+
+      setName("");
+      setContact("");
+      setPrivacyAccepted(false);
+      setItems([]);
+      writeCart([]);
+      setSubmitState({ status: "success", requestId: result.id });
+    } catch {
+      setSubmitState({
+        status: "error",
+        message: "Не удалось связаться с сервером"
+      });
+    }
   };
 
   return (
@@ -122,15 +176,34 @@ export default function CartContents() {
             placeholder="+7 (___) ___-__-__"
           />
         </label>
+        <label className="checkbox-row">
+          <input
+            type="checkbox"
+            checked={privacyAccepted}
+            onChange={(event) => setPrivacyAccepted(event.target.checked)}
+          />
+          <span>Согласен на обработку персональных данных после добавления юридического текста</span>
+        </label>
         <button
           type="button"
-          disabled={!items.length || !name.trim() || !contact.trim()}
-          onClick={() => setSent(true)}
+          disabled={
+            !items.length ||
+            !name.trim() ||
+            !contact.trim() ||
+            !privacyAccepted ||
+            submitState.status === "sending"
+          }
+          onClick={submitCartRequest}
         >
           <Send size={18} aria-hidden="true" />
-          Оформить заявку
+          {submitState.status === "sending" ? "Сохраняем" : "Оформить заявку"}
         </button>
-        {sent ? <p className="form-note">Локальная заготовка готова: после подключения backend заявка уйдет менеджеру.</p> : null}
+        {submitState.status === "success" ? (
+          <p className="form-note">Заявка сохранена в базе: {submitState.requestId}</p>
+        ) : null}
+        {submitState.status === "error" ? (
+          <p className="form-note form-note--error">{submitState.message}</p>
+        ) : null}
       </aside>
     </section>
   );

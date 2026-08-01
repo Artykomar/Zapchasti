@@ -6,6 +6,9 @@ build/
 .env
 .env.*
 !.env.example
+data/*.sqlite
+data/*.sqlite-*
+data/*.db
 *.log
 tsconfig.tsbuildinfo
 .DS_Store

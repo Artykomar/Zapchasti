@@ -2,7 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, CheckCircle2, PackageCheck, ShieldCheck, Truck } from "lucide-react";
 import ProductActions from "@/src/components/ProductActions";
-import { findPartBySlug, formatPrice, parts } from "@/src/data/catalog";
+import { formatPrice } from "@/src/data/catalog";
+import { getPartBySlug, getPartSlugs, getSimilarParts } from "@/src/server/db/catalog";
+
+export const dynamic = "force-dynamic";
 
 type ProductPageProps = {
   params: Promise<{
@@ -11,14 +14,12 @@ type ProductPageProps = {
 };
 
 export function generateStaticParams() {
-  return parts.map((part) => ({
-    slug: part.slug
-  }));
+  return getPartSlugs().map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: ProductPageProps) {
   const { slug } = await params;
-  const part = findPartBySlug(slug);
+  const part = getPartBySlug(slug);
 
   if (!part) {
     return {
@@ -34,15 +35,13 @@ export async function generateMetadata({ params }: ProductPageProps) {
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
-  const part = findPartBySlug(slug);
+  const part = getPartBySlug(slug);
 
   if (!part) {
     notFound();
   }
 
-  const similarParts = parts
-    .filter((item) => item.id !== part.id && (item.categorySlug === part.categorySlug || item.brandSlug === part.brandSlug))
-    .slice(0, 4);
+  const similarParts = getSimilarParts(part, 4);
 
   return (
     <main className="page-shell">

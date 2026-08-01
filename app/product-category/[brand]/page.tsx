@@ -2,7 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, Car, PackageCheck } from "lucide-react";
 import ProductActions from "@/src/components/ProductActions";
-import { brands, findBrandBySlug, formatPrice, getPartsByBrandSlug } from "@/src/data/catalog";
+import { formatPrice } from "@/src/data/catalog";
+import { getBrandBySlug, getBrandSlugs, getPartsByBrandSlug } from "@/src/server/db/catalog";
+
+export const dynamic = "force-dynamic";
 
 type BrandPageProps = {
   params: Promise<{
@@ -11,14 +14,12 @@ type BrandPageProps = {
 };
 
 export function generateStaticParams() {
-  return brands.map((brand) => ({
-    brand: brand.slug
-  }));
+  return getBrandSlugs().map((brand) => ({ brand }));
 }
 
 export async function generateMetadata({ params }: BrandPageProps) {
   const { brand: brandSlug } = await params;
-  const brand = findBrandBySlug(brandSlug);
+  const brand = getBrandBySlug(brandSlug);
 
   if (!brand) {
     return {
@@ -34,7 +35,7 @@ export async function generateMetadata({ params }: BrandPageProps) {
 
 export default async function BrandCategoryPage({ params }: BrandPageProps) {
   const { brand: brandSlug } = await params;
-  const brand = findBrandBySlug(brandSlug);
+  const brand = getBrandBySlug(brandSlug);
 
   if (!brand) {
     notFound();

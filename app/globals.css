@@ -1016,6 +1016,10 @@ dd {
   line-height: 1.55;
 }
 
+.form-note--error {
+  color: var(--accent-strong);
+}
+
 .check-list {
   display: grid;
   gap: 12px;

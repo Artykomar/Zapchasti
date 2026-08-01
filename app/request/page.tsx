@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { MessageCircle, PackageSearch, Send, ShieldCheck } from "lucide-react";
+import { MessageCircle, PackageSearch, ShieldCheck } from "lucide-react";
+import RequestForm from "@/src/components/RequestForm";
 
 export default function RequestPage() {
   return (
@@ -14,32 +15,7 @@ export default function RequestPage() {
       </section>
 
       <section className="request-layout">
-        <form className="request-form">
-          <label>
-            Имя
-            <input name="name" placeholder="Как к вам обращаться" />
-          </label>
-          <label>
-            Телефон или мессенджер
-            <input name="phone" placeholder="+7 (___) ___-__-__" />
-          </label>
-          <label>
-            Автомобиль
-            <input name="vehicle" placeholder="Марка, модель, год, двигатель или модификация" />
-          </label>
-          <label>
-            Что нужно найти
-            <textarea name="parts" placeholder="Номер детали, артикул, название, фото/описание или список позиций" />
-          </label>
-          <label className="checkbox-row">
-            <input type="checkbox" name="privacy" />
-            <span>Согласен на обработку персональных данных после добавления юридического текста</span>
-          </label>
-          <button type="button">
-            <Send size={18} aria-hidden="true" />
-            Отправить заявку
-          </button>
-        </form>
+        <RequestForm />
 
         <aside className="request-aside">
           <ShieldCheck size={30} aria-hidden="true" />

@@ -1,7 +1,11 @@
 import CatalogExplorer from "@/src/components/CatalogExplorer";
-import { brands, categories, parts } from "@/src/data/catalog";
+import { getCatalogSnapshot } from "@/src/server/db/catalog";
+
+export const dynamic = "force-dynamic";
 
 export default function ShopPage() {
+  const catalog = getCatalogSnapshot();
+
   return (
     <main className="page-shell">
       <section className="page-heading">
@@ -13,7 +17,7 @@ export default function ShopPage() {
         </p>
       </section>
 
-      <CatalogExplorer parts={parts} brands={brands} categories={categories} />
+      <CatalogExplorer parts={catalog.parts} brands={catalog.brands} categories={catalog.categories} />
     </main>
   );
 }

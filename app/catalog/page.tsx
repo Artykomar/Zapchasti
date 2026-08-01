@@ -1,5 +1,7 @@
 import CatalogExplorer from "@/src/components/CatalogExplorer";
-import { brands, categories, parts } from "@/src/data/catalog";
+import { getCatalogSnapshot } from "@/src/server/db/catalog";
+
+export const dynamic = "force-dynamic";
 
 type CatalogPageProps = {
   searchParams?: Promise<{
@@ -11,13 +13,21 @@ type CatalogPageProps = {
 
 export default async function CatalogPage({ searchParams }: CatalogPageProps) {
   const params = (await searchParams) ?? {};
+  const baseCatalog = getCatalogSnapshot();
   const requestedBrand = params.brand ?? "all";
   const initialBrand =
-    brands.find((brand) => brand.slug === requestedBrand || brand.name === requestedBrand)?.slug ?? "all";
+    baseCatalog.brands.find((brand) => brand.slug === requestedBrand || brand.name === requestedBrand)?.slug ??
+    "all";
   const requestedCategory = params.category ?? "all";
   const initialCategory =
-    categories.find((category) => category.slug === requestedCategory || category.name === requestedCategory)?.slug ??
-    "all";
+    baseCatalog.categories.find(
+      (category) => category.slug === requestedCategory || category.name === requestedCategory
+    )?.slug ?? "all";
+  const catalog = getCatalogSnapshot({
+    query: params.q,
+    brandSlug: initialBrand === "all" ? undefined : initialBrand,
+    categorySlug: initialCategory === "all" ? undefined : initialCategory
+  });
 
   return (
     <main className="page-shell">
@@ -26,14 +36,14 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
         <h1>Автозапчасти по маркам, категориям и артикулам</h1>
         <p>
           Витрина показывает рабочую структуру магазина: фильтры, поиск, карточки товаров,
-          избранное и добавление в корзину-заявку. Данные пока моковые и готовы к переносу в API.
+          избранное и добавление в корзину-заявку. Данные уже читаются через серверный API и стартовую SQLite-базу.
         </p>
       </section>
 
       <CatalogExplorer
-        parts={parts}
-        brands={brands}
-        categories={categories}
+        parts={catalog.parts}
+        brands={baseCatalog.brands}
+        categories={baseCatalog.categories}
         initialQuery={params.q ?? ""}
         initialBrand={initialBrand}
         initialCategory={initialCategory}

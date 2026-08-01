@@ -4,8 +4,8 @@ import Link from "next/link";
 import { ArrowRight, Filter, PackageCheck, Search } from "lucide-react";
 import ProductActions from "@/src/components/ProductActions";
 import type { Brand, Category, Part } from "@/src/data/catalog";
-import { formatPrice, getPartSearchText } from "@/src/data/catalog";
-import { useMemo, useState } from "react";
+import { formatPrice } from "@/src/data/catalog";
+import { useEffect, useState } from "react";
 
 type CatalogExplorerProps = {
   parts: Part[];
@@ -30,19 +30,58 @@ export default function CatalogExplorer({
   const [brand, setBrand] = useState(initialBrand);
   const [category, setCategory] = useState(initialCategory);
   const [condition, setCondition] = useState(allValue);
+  const [filteredParts, setFilteredParts] = useState(parts);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const filteredParts = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
+  useEffect(() => {
+    const controller = new AbortController();
+    const params = new URLSearchParams();
 
-    return parts.filter((part) => {
-      const queryMatches = !normalizedQuery || getPartSearchText(part).includes(normalizedQuery);
-      const brandMatches = brand === allValue || part.brandSlug === brand;
-      const categoryMatches = category === allValue || part.categorySlug === category;
-      const conditionMatches = condition === allValue || part.condition === condition;
+    if (query.trim()) {
+      params.set("q", query.trim());
+    }
 
-      return queryMatches && brandMatches && categoryMatches && conditionMatches;
-    });
-  }, [brand, category, condition, parts, query]);
+    if (brand !== allValue) {
+      params.set("brand", brand);
+    }
+
+    if (category !== allValue) {
+      params.set("category", category);
+    }
+
+    if (condition !== allValue) {
+      params.set("condition", condition);
+    }
+
+    setIsLoading(true);
+    setErrorMessage("");
+
+    fetch(`/api/catalog?${params.toString()}`, { signal: controller.signal })
+      .then(async (response) => {
+        const data = (await response.json()) as { parts?: Part[]; error?: string };
+
+        if (!response.ok || !data.parts) {
+          throw new Error(data.error ?? "Не удалось обновить каталог");
+        }
+
+        setFilteredParts(data.parts);
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+
+        setErrorMessage(error instanceof Error ? error.message : "Не удалось обновить каталог");
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => controller.abort();
+  }, [brand, category, condition, query]);
 
   return (
     <>
@@ -143,8 +182,9 @@ export default function CatalogExplorer({
 
         <div className="catalog-products">
           <div className="catalog-count">
-            Найдено позиций: <strong>{filteredParts.length}</strong>
+            {isLoading ? "Обновляем каталог" : "Найдено позиций"}: <strong>{filteredParts.length}</strong>
           </div>
+          {errorMessage ? <p className="form-note form-note--error">{errorMessage}</p> : null}
           {filteredParts.length > 0 ? (
             filteredParts.map((part) => (
               <article key={part.id} className="wide-product">
