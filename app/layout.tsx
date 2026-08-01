@@ -12,7 +12,6 @@ export const metadata: Metadata = {
 const navItems = [
   { href: "/catalog", label: "Каталог" },
   { href: "/about", label: "О компании" },
-  { href: "/buybacks", label: "Выкуп авто" },
   { href: "/reviews", label: "Отзывы" },
   { href: "/delivery", label: "Доставка" },
   { href: "/contacts", label: "Контакты" }

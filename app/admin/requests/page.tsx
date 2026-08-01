@@ -102,7 +102,9 @@ export default async function AdminRequestsPage({ searchParams }: AdminRequestsP
                   <span className={`admin-status admin-status--${request.status}`}>
                     {statusLabels[request.status]}
                   </span>
-                  <h2>{request.customerName}</h2>
+                  <h2>
+                    <Link href={`/admin/requests/${request.id}`}>{request.customerName}</Link>
+                  </h2>
                   <a href={`tel:${request.contact.replace(/[^\d+]/g, "")}`}>
                     <PhoneCall size={16} aria-hidden="true" />
                     {request.contact}
@@ -144,6 +146,9 @@ export default async function AdminRequestsPage({ searchParams }: AdminRequestsP
               </div>
 
               <div className="admin-request-card__actions">
+                <Link className="admin-primary-button" href={`/admin/requests/${request.id}`}>
+                  Открыть карточку
+                </Link>
                 {statusActions.map((action) => {
                   const Icon = action.icon;
 

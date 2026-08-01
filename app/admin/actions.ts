@@ -8,7 +8,14 @@ import {
   requireAdminSession,
   verifyAdminPassword
 } from "@/src/server/auth/admin";
-import { updateCustomerRequestStatus, type CustomerRequestStatus } from "@/src/server/db/catalog";
+import {
+  addCustomerRequestComment,
+  importPriceRows,
+  updateCustomerRequestStatus,
+  updateProductActivity,
+  type CustomerRequestStatus
+} from "@/src/server/db/catalog";
+import { parsePriceImportFile } from "@/src/server/import/priceImport";
 
 const allowedStatuses: CustomerRequestStatus[] = [
   "new",
@@ -54,4 +61,57 @@ export async function changeRequestStatus(formData: FormData) {
   updateCustomerRequestStatus(requestId, status, note || `Статус изменен на ${status}`);
   revalidatePath("/admin");
   revalidatePath("/admin/requests");
+  revalidatePath(`/admin/requests/${requestId}`);
+}
+
+export async function addRequestComment(formData: FormData) {
+  await requireAdminSession();
+
+  const requestId = String(formData.get("requestId") ?? "");
+  const note = String(formData.get("note") ?? "");
+
+  if (!requestId || !note.trim()) {
+    return;
+  }
+
+  addCustomerRequestComment(requestId, note);
+  revalidatePath("/admin");
+  revalidatePath("/admin/requests");
+  revalidatePath(`/admin/requests/${requestId}`);
+}
+
+export async function setProductActivity(formData: FormData) {
+  await requireAdminSession();
+
+  const partId = String(formData.get("partId") ?? "");
+  const isActive = String(formData.get("isActive") ?? "") === "true";
+
+  if (!partId) {
+    return;
+  }
+
+  updateProductActivity(partId, isActive);
+  revalidatePath("/admin");
+  revalidatePath("/admin/products");
+  revalidatePath("/catalog");
+}
+
+export async function importPriceFile(formData: FormData) {
+  await requireAdminSession();
+
+  const file = formData.get("file");
+
+  if (!(file instanceof File) || file.size === 0) {
+    redirect("/admin/products/import?result=empty");
+  }
+
+  const parsed = await parsePriceImportFile(file);
+  const result = importPriceRows(parsed.filename, parsed.fileKind, parsed.rows);
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/products");
+  revalidatePath("/catalog");
+  redirect(
+    `/admin/products/import?result=ok&imported=${result.importedRows}&skipped=${result.skippedRows}`
+  );
 }

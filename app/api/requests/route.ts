@@ -4,6 +4,7 @@ import {
   type CustomerRequestInput,
   type CustomerRequestItemInput
 } from "@/src/server/db/catalog";
+import { notifyManagerAboutRequest } from "@/src/server/notifications/manager";
 import { hitRateLimit } from "@/src/server/security/rateLimit";
 
 export const runtime = "nodejs";
@@ -126,6 +127,7 @@ export async function POST(request: Request) {
   }
 
   const result = createCustomerRequest(validation.value);
+  await notifyManagerAboutRequest(validation.value, result);
 
   return NextResponse.json(result, { status: 201, headers: jsonHeaders });
 }

@@ -1,5 +1,14 @@
 import Link from "next/link";
-import { ClipboardList, Database, FileSpreadsheet, Inbox, Package, ShieldCheck } from "lucide-react";
+import {
+  Bell,
+  ClipboardList,
+  Database,
+  FileSpreadsheet,
+  Inbox,
+  Package,
+  ShieldCheck,
+  Users
+} from "lucide-react";
 import { logoutAdmin } from "@/app/admin/actions";
 import { requireAdminSession } from "@/src/server/auth/admin";
 import {
@@ -33,7 +42,14 @@ export default async function AdminPage() {
     { label: "Закрыто", value: stats.doneRequests, icon: ShieldCheck },
     { label: "Товары", value: stats.products, icon: Package },
     { label: "Марки", value: stats.brands, icon: Database },
-    { label: "Категории", value: stats.categories, icon: FileSpreadsheet }
+    { label: "Клиенты", value: stats.customers, icon: Users }
+  ];
+  const adminSections = [
+    { href: "/admin/requests", label: "Заявки", icon: Inbox },
+    { href: "/admin/customers", label: "Клиенты", icon: Users },
+    { href: "/admin/products", label: "Товары", icon: Package },
+    { href: "/admin/products/import", label: "Импорт прайса", icon: FileSpreadsheet },
+    { href: "/admin/notifications", label: "Уведомления", icon: Bell }
   ];
 
   return (
@@ -107,14 +123,19 @@ export default async function AdminPage() {
         </div>
 
         <aside className="admin-panel admin-roadmap">
-          <h2>Следующие блоки админки</h2>
-          <ul>
-            <li>карточка заявки с комментариями и историей звонков;</li>
-            <li>редактор товаров, цен, поставщиков и остатков;</li>
-            <li>импорт CSV/XLSX-прайсов;</li>
-            <li>уведомления менеджеру в Telegram или email;</li>
-            <li>пользователи, роли, 2FA и журнал действий.</li>
-          </ul>
+          <h2>Разделы админки</h2>
+          <div className="admin-section-links">
+            {adminSections.map((item) => {
+              const Icon = item.icon;
+
+              return (
+                <Link key={item.href} href={item.href}>
+                  <Icon size={18} aria-hidden="true" />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
         </aside>
       </section>
     </main>

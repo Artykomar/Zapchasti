@@ -7,7 +7,6 @@ import {
   ClipboardList,
   Cog,
   PackageSearch,
-  Recycle,
   Search,
   ShieldCheck,
   Truck
@@ -299,14 +298,14 @@ export default function HomePageClient({ brands, categories, parts }: HomePageCl
 
       <section className="workspace workspace--split">
         <aside className="process-panel process-panel--teal">
-          <Recycle size={28} aria-hidden="true" />
-          <h3>Выкуп авто и остатков</h3>
+          <ShieldCheck size={28} aria-hidden="true" />
+          <h3>Проверка перед заказом</h3>
           <p>
-            Страница выкупа подготовлена как будущий канал пополнения склада: автомобили, агрегаты,
-            складские остатки и партии деталей.
+            Для каждой заявки менеджер сверяет номер детали, применимость, актуальную цену,
+            наличие у поставщика и условия гарантии.
           </p>
-          <Link className="secondary-action" href="/buybacks">
-            Раздел выкупа
+          <Link className="secondary-action" href="/request">
+            Отправить запрос
           </Link>
         </aside>
         <aside className="process-panel">

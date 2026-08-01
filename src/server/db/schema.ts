@@ -53,6 +53,14 @@ export const schemaStatements = [
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
   )`,
+  `CREATE TABLE IF NOT EXISTS customers (
+    id TEXT PRIMARY KEY,
+    display_name TEXT NOT NULL,
+    contact TEXT NOT NULL,
+    normalized_contact TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`,
   `CREATE TABLE IF NOT EXISTS parts (
     id TEXT PRIMARY KEY,
     slug TEXT NOT NULL UNIQUE,
@@ -67,6 +75,7 @@ export const schemaStatements = [
     primary_oem TEXT NOT NULL,
     primary_article TEXT NOT NULL,
     search_text TEXT NOT NULL,
+    is_active INTEGER NOT NULL DEFAULT 1,
     sort_order INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -105,6 +114,7 @@ export const schemaStatements = [
   )`,
   `CREATE TABLE IF NOT EXISTS customer_requests (
     id TEXT PRIMARY KEY,
+    customer_id TEXT REFERENCES customers(id) ON DELETE SET NULL,
     status TEXT NOT NULL DEFAULT 'new',
     source TEXT NOT NULL,
     customer_name TEXT NOT NULL,
@@ -114,6 +124,21 @@ export const schemaStatements = [
     privacy_accepted INTEGER NOT NULL DEFAULT 0,
     total_estimate_rub INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`,
+  `CREATE TABLE IF NOT EXISTS price_imports (
+    id TEXT PRIMARY KEY,
+    filename TEXT NOT NULL,
+    file_kind TEXT NOT NULL,
+    imported_rows INTEGER NOT NULL DEFAULT 0,
+    skipped_rows INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`,
+  `CREATE TABLE IF NOT EXISTS notification_settings (
+    id TEXT PRIMARY KEY,
+    manager_email TEXT NOT NULL DEFAULT '',
+    telegram_chat_id TEXT NOT NULL DEFAULT '',
+    telegram_bot_token_configured INTEGER NOT NULL DEFAULT 0,
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
   )`,
   `CREATE TABLE IF NOT EXISTS customer_request_items (
@@ -141,6 +166,7 @@ export const schemaStatements = [
   `CREATE INDEX IF NOT EXISTS idx_parts_search_text ON parts(search_text)`,
   `CREATE INDEX IF NOT EXISTS idx_part_numbers_value ON part_numbers(normalized_value)`,
   `CREATE INDEX IF NOT EXISTS idx_price_offers_part_primary ON price_offers(part_id, is_primary)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_customers_normalized_contact ON customers(normalized_contact)`,
   `CREATE INDEX IF NOT EXISTS idx_customer_requests_status_created ON customer_requests(status, created_at)`,
   `CREATE INDEX IF NOT EXISTS idx_customer_request_events_request ON customer_request_events(request_id, created_at)`
 ];
