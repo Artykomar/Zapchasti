@@ -907,5 +907,5 @@ GitHub:
 - 2026-08-01: добавлен переносимый demo seed `backend/apps/catalog/demo_data.json` и команда `python backend/manage.py seed_demo`, чтобы после clone на новом компьютере сразу поднять демо-каталог без старой Next SQLite-БД.
 - 2026-08-01: добавлены Python-сервисы импорта CSV/XLSX-прайсов и уведомлений менеджеру через SMTP/Telegram; реальные отправки остаются выключены до заполнения env-переменных владельца.
 - 2026-08-01: добавлена PyCharm-конфигурация `.idea`: Git mapping на корень репозитория, модуль проекта, исключения `.venv`/`node_modules`/`.next`, run configuration `Django API: runserver 8000`.
-- 2026-08-01: добавлена документация `backend/README.md` и `backend/MIGRATION_NOTES.md`; обновлен корневой `README.md` с пояснением по веткам `main` и `master`.
+- 2026-08-01: добавлена документация `backend/README.md` и [backend/MIGRATION_NOTES.md](backend/MIGRATION_NOTES.md); обновлен корневой `README.md` с пояснением по веткам `main` и `master`.
 - 2026-08-01: проверены Django-команды `manage.py check`, `makemigrations --check --dry-run`, `manage.py test apps.catalog apps.leads`; smoke test подтвердил 200 для `/api/health`, `/api/catalog`, `/api/catalog/octavia-led-headlamp-left` и 400-валидацию пустой заявки.
