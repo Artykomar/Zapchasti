@@ -6,6 +6,17 @@ build/
 .env
 .env.*
 !.env.example
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+backend/.env
+backend/*.sqlite3
+backend/data/*.sqlite3
+backend/media/
+backend/staticfiles/
 data/*.sqlite
 data/*.sqlite-*
 data/*.db
