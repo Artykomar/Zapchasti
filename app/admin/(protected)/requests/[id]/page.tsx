@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CheckCircle2, Clock3, PauseCircle, PhoneCall, XCircle } from "lucide-react";
-import { addRequestComment, changeRequestStatus, logoutAdmin } from "@/app/admin/actions";
+import { addRequestComment, changeRequestStatus } from "@/app/admin/actions";
 import { formatPrice } from "@/src/data/catalog";
 import { requireAdminSession } from "@/src/server/auth/admin";
 import { getAdminCustomerRequestById, type CustomerRequestStatus } from "@/src/server/db/catalog";
@@ -62,11 +62,6 @@ export default async function AdminRequestDetailPage({ params }: AdminRequestDet
           <h1>{request.customerName}</h1>
           <p>Детальный рабочий экран менеджера: клиент, товары, контакт, статусы и комментарии.</p>
         </div>
-        <form action={logoutAdmin}>
-          <button type="submit" className="admin-ghost-button">
-            Выйти
-          </button>
-        </form>
       </section>
 
       <section className="admin-detail-layout">

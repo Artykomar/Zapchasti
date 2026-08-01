@@ -9,7 +9,6 @@ import {
   ShieldCheck,
   Users
 } from "lucide-react";
-import { logoutAdmin } from "@/app/admin/actions";
 import { requireAdminSession } from "@/src/server/auth/admin";
 import {
   getAdminDashboardStats,
@@ -63,11 +62,6 @@ export default async function AdminPage() {
             состав обращения и менять статус обработки.
           </p>
         </div>
-        <form action={logoutAdmin}>
-          <button type="submit" className="admin-ghost-button">
-            Выйти
-          </button>
-        </form>
       </section>
 
       <section className="admin-stat-grid" aria-label="Сводка">

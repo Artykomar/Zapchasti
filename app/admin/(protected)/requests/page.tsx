@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, Clock3, PauseCircle, PhoneCall, XCircle } from "lucide-react";
-import { changeRequestStatus, logoutAdmin } from "@/app/admin/actions";
+import { changeRequestStatus } from "@/app/admin/actions";
 import { formatPrice } from "@/src/data/catalog";
 import { requireAdminSession } from "@/src/server/auth/admin";
 import { getAdminCustomerRequests, type CustomerRequestStatus } from "@/src/server/db/catalog";
@@ -74,11 +74,6 @@ export default async function AdminRequestsPage({ searchParams }: AdminRequestsP
             статус обработки и история действий менеджера.
           </p>
         </div>
-        <form action={logoutAdmin}>
-          <button type="submit" className="admin-ghost-button">
-            Выйти
-          </button>
-        </form>
       </section>
 
       <nav className="admin-filter" aria-label="Фильтр заявок">

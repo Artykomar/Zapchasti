@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, Upload } from "lucide-react";
-import { importPriceFile, logoutAdmin } from "@/app/admin/actions";
+import { importPriceFile } from "@/app/admin/actions";
 import { requireAdminSession } from "@/src/server/auth/admin";
 
 export const dynamic = "force-dynamic";
@@ -34,11 +34,6 @@ export default async function AdminProductImportPage({ searchParams }: ImportPag
           <h1>CSV/XLSX прайс</h1>
           <p>Загрузите таблицу поставщика. Система обновит товары по артикулу и создаст ценовые предложения.</p>
         </div>
-        <form action={logoutAdmin}>
-          <button type="submit" className="admin-ghost-button">
-            Выйти
-          </button>
-        </form>
       </section>
 
       <section className="admin-detail-layout">

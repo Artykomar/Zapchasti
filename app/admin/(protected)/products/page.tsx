@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, Eye, EyeOff, FileSpreadsheet } from "lucide-react";
-import { logoutAdmin, setProductActivity } from "@/app/admin/actions";
+import { setProductActivity } from "@/app/admin/actions";
 import { formatPrice } from "@/src/data/catalog";
 import { requireAdminSession } from "@/src/server/auth/admin";
 import { getAdminProducts } from "@/src/server/db/catalog";
@@ -35,11 +35,6 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
           <h1>Управление каталогом</h1>
           <p>Пока доступно скрытие товара с витрины и импорт прайса. Полный редактор карточки будет следующим слоем.</p>
         </div>
-        <form action={logoutAdmin}>
-          <button type="submit" className="admin-ghost-button">
-            Выйти
-          </button>
-        </form>
       </section>
 
       <div className="admin-panel admin-panel__head">
@@ -60,9 +55,7 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
               <span className={part.isActive ? "admin-status admin-status--in_work" : "admin-status admin-status--cancelled"}>
                 {part.isActive ? "На витрине" : "Скрыт"}
               </span>
-              <h2>
-                <Link href={`/product/${part.slug}`}>{part.name}</Link>
-              </h2>
+              <h2>{part.name}</h2>
               <p>
                 {part.brand} {part.model}, {part.category}
               </p>

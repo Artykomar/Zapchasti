@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { ArrowLeft, PhoneCall } from "lucide-react";
-import { logoutAdmin } from "@/app/admin/actions";
 import { requireAdminSession } from "@/src/server/auth/admin";
 import { getAdminCustomers } from "@/src/server/db/catalog";
 
@@ -33,11 +32,6 @@ export default async function AdminCustomersPage() {
           <h1>Контакты покупателей</h1>
           <p>Пока клиент создается автоматически при заявке и связывается по нормализованному телефону.</p>
         </div>
-        <form action={logoutAdmin}>
-          <button type="submit" className="admin-ghost-button">
-            Выйти
-          </button>
-        </form>
       </section>
 
       <section className="admin-table">

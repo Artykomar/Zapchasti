@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { ArrowLeft, Bell, Mail, Send } from "lucide-react";
-import { logoutAdmin } from "@/app/admin/actions";
 import { requireAdminSession } from "@/src/server/auth/admin";
 
 export const dynamic = "force-dynamic";
@@ -37,11 +36,6 @@ export default async function AdminNotificationsPage() {
             уведомления при каждой новой заявке.
           </p>
         </div>
-        <form action={logoutAdmin}>
-          <button type="submit" className="admin-ghost-button">
-            Выйти
-          </button>
-        </form>
       </section>
 
       <section className="admin-detail-layout">
