@@ -909,3 +909,4 @@ GitHub:
 - 2026-08-01: добавлена PyCharm-конфигурация `.idea`: Git mapping на корень репозитория, модуль проекта, исключения `.venv`/`node_modules`/`.next`, run configuration `Django API: runserver 8000`.
 - 2026-08-01: добавлена документация `backend/README.md` и [backend/MIGRATION_NOTES.md](backend/MIGRATION_NOTES.md); обновлен корневой `README.md` с пояснением по веткам `main` и `master`.
 - 2026-08-01: проверены Django-команды `manage.py check`, `makemigrations --check --dry-run`, `manage.py test apps.catalog apps.leads`; smoke test подтвердил 200 для `/api/health`, `/api/catalog`, `/api/catalog/octavia-led-headlamp-left` и 400-валидацию пустой заявки.
+- 2026-08-01: зафиксировано правило защиты от SQL-инъекций для Django-ветки: использовать Django ORM и параметризованные запросы, не собирать raw SQL через f-string, конкатенацию, `%` или `.format()` с пользовательским вводом; правило добавлено в [backend/MIGRATION_NOTES.md](backend/MIGRATION_NOTES.md).
