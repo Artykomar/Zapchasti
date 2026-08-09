@@ -88,6 +88,16 @@ const parseCsv = (content: string): RawTable =>
     .filter(Boolean)
     .map(parseCsvLine);
 
+const decodeCsvContent = (buffer: ArrayBuffer) => {
+  const bytes = new Uint8Array(buffer);
+
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    return new TextDecoder("windows-1251", { fatal: true }).decode(bytes);
+  }
+};
+
 const asArray = <T>(value: T | T[] | undefined): T[] => {
   if (!value) {
     return [];
@@ -214,10 +224,11 @@ const mapRawTable = (table: RawTable): PriceImportRow[] => {
 export const parsePriceImportFile = async (file: File) => {
   const filename = file.name;
   const extension = filename.split(".").pop()?.toLowerCase() ?? "";
+  const buffer = await file.arrayBuffer();
   const table =
     extension === "xlsx"
-      ? await parseXlsx(await file.arrayBuffer())
-      : parseCsv(await file.text());
+      ? await parseXlsx(buffer)
+      : parseCsv(decodeCsvContent(buffer));
 
   return {
     filename,

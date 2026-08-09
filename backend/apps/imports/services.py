@@ -5,12 +5,15 @@ from dataclasses import dataclass
 from io import StringIO
 
 from django.db import transaction
-from django.utils.text import slugify
 from openpyxl import load_workbook
 
 from apps.catalog.models import Brand, Category, Manufacturer, Part, PartNumber, PriceOffer, Supplier
-from apps.catalog.services import build_part_search_text, normalize_part_number
+from apps.catalog.services import build_part_search_text, normalize_part_number, stable_slug
 from .models import PriceImport
+
+
+class PriceImportParseError(ValueError):
+    pass
 
 
 @dataclass
@@ -60,6 +63,7 @@ COLUMN_ALIASES = {
     "срок поставки": "delivery",
 }
 AVAILABILITY_VALUES = {"в наличии", "1-3 дня", "под заказ", "уточнить"}
+CSV_ENCODINGS = ("utf-8-sig", "cp1251")
 
 
 def normalize_header(value: str) -> str:
@@ -76,9 +80,32 @@ def parse_price(value: object) -> int:
         return 0
 
 
+def decode_csv_content(content: bytes) -> str:
+    for encoding in CSV_ENCODINGS:
+        try:
+            return content.decode(encoding)
+        except UnicodeDecodeError:
+            continue
+    raise PriceImportParseError("Не удалось прочитать CSV: поддерживаются UTF-8, UTF-8 BOM и Windows-1251.")
+
+
+def detect_csv_delimiter(text: str) -> str:
+    sample = text[:4096]
+
+    try:
+        dialect = csv.Sniffer().sniff(sample, delimiters=";,")
+        return dialect.delimiter
+    except csv.Error:
+        first_lines = [line for line in text.splitlines()[:10] if line.strip()]
+        semicolons = sum(line.count(";") for line in first_lines)
+        commas = sum(line.count(",") for line in first_lines)
+        return "," if commas > semicolons else ";"
+
+
 def rows_from_csv(content: bytes) -> list[list[str]]:
-    text = content.decode("utf-8-sig")
-    return [row for row in csv.reader(StringIO(text), delimiter=";") if any(cell.strip() for cell in row)]
+    text = decode_csv_content(content)
+    delimiter = detect_csv_delimiter(text)
+    return [row for row in csv.reader(StringIO(text), delimiter=delimiter) if any(cell.strip() for cell in row)]
 
 
 def rows_from_xlsx(content: bytes) -> list[list[str]]:
@@ -124,12 +151,12 @@ def parse_price_import_file(filename: str, content: bytes) -> list[PriceImportRo
 
 
 def get_or_create_brand(value: str) -> Brand:
-    slug = slugify(value, allow_unicode=False) or "zemazap"
+    slug = stable_slug(value, "zemazap")
     return Brand.objects.get_or_create(slug=slug, defaults={"name": value, "country": "уточнить", "sort_order": 999})[0]
 
 
 def get_or_create_category(value: str) -> Category:
-    slug = slugify(value, allow_unicode=False) or "import"
+    slug = stable_slug(value, "import")
     return Category.objects.get_or_create(
         slug=slug,
         defaults={"name": value, "description": "Импортированная категория, описание нужно заполнить.", "sort_order": 999},
@@ -152,7 +179,7 @@ def import_price_rows(filename: str, file_kind: str, rows: list[PriceImportRow])
         brand = get_or_create_brand(row.brand)
         category = get_or_create_category(row.category)
         manufacturer, _created = Manufacturer.objects.get_or_create(name=row.manufacturer or "уточнить")
-        part_slug = slugify(f"{row.article}-{row.name}", allow_unicode=False)[:150] or f"import-{imported_rows + 1}"
+        part_slug = stable_slug(f"{row.article}-{row.name}", f"import-{imported_rows + 1}", max_length=150)
         legacy_id = f"import:{normalize_part_number(row.article) or part_slug}"
         oem = row.oem or row.article
         search_text = build_part_search_text(

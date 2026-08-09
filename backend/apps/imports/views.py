@@ -2,7 +2,7 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .services import import_price_rows, parse_price_import_file
+from .services import PriceImportParseError, import_price_rows, parse_price_import_file
 
 
 class PriceImportAPIView(APIView):
@@ -14,7 +14,11 @@ class PriceImportAPIView(APIView):
         if not upload:
             return Response({"error": "File is required"}, status=400)
 
-        rows = parse_price_import_file(upload.name, upload.read())
+        try:
+            rows = parse_price_import_file(upload.name, upload.read())
+        except PriceImportParseError as exc:
+            return Response({"error": str(exc)}, status=400)
+
         result = import_price_rows(upload.name, upload.name.rsplit(".", 1)[-1].lower(), rows)
 
         return Response(
