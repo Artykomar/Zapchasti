@@ -1,10 +1,10 @@
 import CatalogExplorer from "@/src/components/CatalogExplorer";
-import { getCatalogSnapshot } from "@/src/server/db/catalog";
+import { getCatalogSnapshot } from "@/src/server/django/catalog";
 
 export const dynamic = "force-dynamic";
 
-export default function ShopPage() {
-  const catalog = getCatalogSnapshot();
+export default async function ShopPage() {
+  const catalog = await getCatalogSnapshot();
 
   return (
     <main className="page-shell">

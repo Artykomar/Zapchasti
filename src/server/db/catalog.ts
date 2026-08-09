@@ -13,6 +13,7 @@ import {
   type PartCondition
 } from "@/src/data/catalog";
 import { schemaStatements } from "@/src/server/db/schema";
+import { stableSlug } from "@/src/server/text/slug";
 
 type DbGlobal = typeof globalThis & {
   __zemazapDb?: DatabaseSync;
@@ -259,23 +260,10 @@ export const normalizeContact = (value: string) => {
 };
 
 const stableId = (prefix: string, value: string) => {
-  const slug = value
-    .trim()
-    .toLocaleLowerCase("ru-RU")
-    .normalize("NFKD")
-    .replace(/[^\p{Letter}\p{Number}]+/gu, "-")
-    .replace(/^-+|-+$/g, "");
+  const slug = stableSlug(value);
 
   return `${prefix}-${slug || "item"}`;
 };
-
-const slugify = (value: string) =>
-  value
-    .trim()
-    .toLocaleLowerCase("ru-RU")
-    .normalize("NFKD")
-    .replace(/[^\p{Letter}\p{Number}]+/gu, "-")
-    .replace(/^-+|-+$/g, "");
 
 const buildSearchText = (part: Part) =>
   normalizeSearch(
@@ -1042,7 +1030,7 @@ export const updateProductActivity = (partId: string, isActive: boolean) => {
 
 const resolveBrandId = (db: DatabaseSync, nameOrSlug: string) => {
   const value = nameOrSlug.trim();
-  const slug = slugify(value);
+  const slug = stableSlug(value);
   const existing = db
     .prepare("SELECT id FROM brands WHERE slug = ? OR name = ? LIMIT 1")
     .get(slug, value) as { id: string } | undefined;
@@ -1062,7 +1050,7 @@ const resolveBrandId = (db: DatabaseSync, nameOrSlug: string) => {
 
 const resolveCategoryId = (db: DatabaseSync, nameOrSlug: string) => {
   const value = nameOrSlug.trim();
-  const slug = slugify(value);
+  const slug = stableSlug(value);
   const existing = db
     .prepare("SELECT id FROM categories WHERE slug = ? OR name = ? LIMIT 1")
     .get(slug, value) as { id: string } | undefined;
@@ -1147,8 +1135,8 @@ export const importPriceRows = (filename: string, fileKind: string, rows: PriceI
       const brandId = resolveBrandId(db, row.brand || "Zemazap");
       const categoryId = resolveCategoryId(db, row.category || "Импорт");
       const manufacturerId = resolveManufacturerId(db, row.manufacturer || "уточнить");
-      const partId = `import:${normalizePartNumber(article) || slugify(name)}`;
-      const slug = slugify(`${article}-${name}`).slice(0, 90) || partId.replace(":", "-");
+      const partId = `import:${normalizePartNumber(article) || stableSlug(name)}`;
+      const slug = stableSlug(`${article}-${name}`).slice(0, 90) || partId.replace(":", "-");
       const oem = row.oem?.trim() || article;
       const model = row.model?.trim() || "уточнить";
       const price = Math.max(0, Math.round(row.price ?? 0));

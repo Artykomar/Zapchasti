@@ -2,7 +2,9 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .services import import_price_rows, parse_price_import_file
+from .services import PriceImportParseError, import_price_rows, parse_price_import_file
+
+ALLOWED_IMPORT_EXTENSIONS = {"csv", "xlsx"}
 
 
 class PriceImportAPIView(APIView):
@@ -13,9 +15,18 @@ class PriceImportAPIView(APIView):
 
         if not upload:
             return Response({"error": "File is required"}, status=400)
+        extension = upload.name.rsplit(".", 1)[-1].lower() if "." in upload.name else ""
+        if extension not in ALLOWED_IMPORT_EXTENSIONS:
+            return Response({"error": "Поддерживаются только CSV и XLSX файлы."}, status=400)
+        if upload.size == 0:
+            return Response({"error": "Файл пустой."}, status=400)
 
-        rows = parse_price_import_file(upload.name, upload.read())
-        result = import_price_rows(upload.name, upload.name.rsplit(".", 1)[-1].lower(), rows)
+        try:
+            rows = parse_price_import_file(upload.name, upload.read())
+        except PriceImportParseError as exc:
+            return Response({"error": str(exc)}, status=400)
+
+        result = import_price_rows(upload.name, extension, rows)
 
         return Response(
             {

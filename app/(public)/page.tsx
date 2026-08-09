@@ -1,10 +1,10 @@
 import HomePageClient from "@/src/components/HomePageClient";
-import { getCatalogSnapshot } from "@/src/server/db/catalog";
+import { getCatalogSnapshot } from "@/src/server/django/catalog";
 
 export const dynamic = "force-dynamic";
 
-export default function HomePage() {
-  const catalog = getCatalogSnapshot({ limit: 12 });
+export default async function HomePage() {
+  const catalog = await getCatalogSnapshot({ limit: 12 });
 
   return (
     <HomePageClient

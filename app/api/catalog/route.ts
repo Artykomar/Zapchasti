@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getCatalogSnapshot } from "@/src/server/db/catalog";
+import { fetchDjangoRaw } from "@/src/server/django/client";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -8,30 +8,24 @@ const jsonHeaders = {
   "Content-Type": "application/json; charset=utf-8"
 };
 
-const cleanFilter = (value: string | null) => {
-  const trimmed = value?.trim();
-  return trimmed && trimmed !== "all" ? trimmed : undefined;
-};
-
-export function GET(request: Request) {
+export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const limit = Number(searchParams.get("limit") ?? 100);
-  const catalog = getCatalogSnapshot({
-    query: cleanFilter(searchParams.get("q")),
-    brandSlug: cleanFilter(searchParams.get("brand")),
-    categorySlug: cleanFilter(searchParams.get("category")),
-    condition: cleanFilter(searchParams.get("condition")),
-    limit: Number.isFinite(limit) ? limit : 100
-  });
 
-  return NextResponse.json(
-    {
-      ...catalog,
-      meta: {
-        database: "sqlite-development",
-        productionTarget: "postgresql"
+  try {
+    const upstream = await fetchDjangoRaw(`/api/catalog/${searchParams.size ? `?${searchParams}` : ""}`, {
+      headers: {
+        Accept: "application/json"
       }
-    },
-    { headers: jsonHeaders }
-  );
+    });
+
+    return new NextResponse(await upstream.text(), {
+      status: upstream.status,
+      headers: jsonHeaders
+    });
+  } catch {
+    return NextResponse.json(
+      { error: "Django API is unavailable" },
+      { status: 502, headers: jsonHeaders }
+    );
+  }
 }

@@ -7,6 +7,11 @@ from apps.notifications.services import notify_manager_about_request
 
 from .models import CustomerRequest, CustomerRequestEvent, CustomerRequestItem
 
+MAX_REQUEST_TEXT_LENGTH = 2000
+MAX_REQUEST_ITEMS = 50
+MAX_ITEM_QUANTITY = 99
+MAX_ITEM_PRICE = 50_000_000
+
 
 def normalize_contact(value: str) -> str:
     digits = "".join(char for char in value if char.isdigit())
@@ -19,12 +24,18 @@ class CustomerRequestItemInputSerializer(serializers.Serializer):
     id = serializers.CharField(required=False, allow_blank=True)
     name = serializers.CharField(max_length=240)
     article = serializers.CharField(max_length=120, required=False, allow_blank=True)
-    quantity = serializers.IntegerField(min_value=1, max_value=99)
-    price = serializers.IntegerField(min_value=0, required=False, default=0)
+    quantity = serializers.IntegerField(min_value=1, max_value=MAX_ITEM_QUANTITY)
+    price = serializers.IntegerField(min_value=0, max_value=MAX_ITEM_PRICE, required=False, default=0)
 
 
 class CustomerRequestCreateSerializer(serializers.ModelSerializer):
+    customer_name = serializers.CharField(min_length=2, max_length=160)
+    contact = serializers.CharField(min_length=5, max_length=160)
+    vehicle = serializers.CharField(max_length=240, required=False, allow_blank=True)
+    request_text = serializers.CharField(max_length=MAX_REQUEST_TEXT_LENGTH, required=False, allow_blank=True)
     items = CustomerRequestItemInputSerializer(many=True, required=False)
+    website = serializers.CharField(required=False, allow_blank=True, write_only=True)
+    company = serializers.CharField(required=False, allow_blank=True, write_only=True)
 
     class Meta:
         model = CustomerRequest
@@ -38,6 +49,8 @@ class CustomerRequestCreateSerializer(serializers.ModelSerializer):
             "privacy_accepted",
             "total_estimate_rub",
             "items",
+            "website",
+            "company",
         ]
         read_only_fields = ["id", "total_estimate_rub"]
 
@@ -51,6 +64,7 @@ class CustomerRequestCreateSerializer(serializers.ModelSerializer):
                 "message": "request_text",
                 "parts": "request_text",
                 "privacyAccepted": "privacy_accepted",
+                "websiteUrl": "website",
             }
             for source, target in aliases.items():
                 if source in data and target not in data:
@@ -59,15 +73,28 @@ class CustomerRequestCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         items = attrs.get("items", [])
+        if len(items) > MAX_REQUEST_ITEMS:
+            raise serializers.ValidationError(f"В заявке не может быть больше {MAX_REQUEST_ITEMS} позиций.")
         if not attrs.get("request_text") and not items:
             raise serializers.ValidationError("Add request text or at least one cart item.")
         if not attrs.get("privacy_accepted"):
             raise serializers.ValidationError("Privacy consent is required.")
+        if attrs.get("website") or attrs.get("company"):
+            raise serializers.ValidationError("Spam protection rejected the request.")
+
+        contact = attrs.get("contact", "").strip()
+        digits = "".join(char for char in contact if char.isdigit())
+        if digits and not 10 <= len(digits) <= 15:
+            raise serializers.ValidationError("Contact phone must contain 10-15 digits.")
+        if not digits and len(contact) < 5:
+            raise serializers.ValidationError("Contact must contain a phone number or messenger handle.")
         return attrs
 
     @transaction.atomic
     def create(self, validated_data):
         items = validated_data.pop("items", [])
+        validated_data.pop("website", None)
+        validated_data.pop("company", None)
         normalized_contact = normalize_contact(validated_data["contact"])
         customer, _created = Customer.objects.update_or_create(
             normalized_contact=normalized_contact,
