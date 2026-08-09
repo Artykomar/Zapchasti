@@ -1,6 +1,9 @@
+from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 
 from apps.catalog.models import Brand, Category, Part
+from .models import PriceImport
 from .services import PriceImportRow, import_price_rows, parse_price_import_file
 
 
@@ -57,3 +60,47 @@ class PriceImportCyrillicTests(TestCase):
             Category.objects.get(name="Фары").slug,
             Category.objects.get(name="Бамперы").slug,
         )
+
+
+class PriceImportApiTests(TestCase):
+    def setUp(self):
+        self.staff_user = get_user_model().objects.create_user(
+            username="manager",
+            password="test-password",
+            is_staff=True,
+        )
+
+    def test_import_endpoint_requires_staff_user(self):
+        upload = SimpleUploadedFile(
+            "price.csv",
+            "Название;Артикул\nФара;A-100\n".encode("utf-8"),
+            content_type="text/csv",
+        )
+
+        response = self.client.post("/api/imports/prices/", {"file": upload})
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_bad_xlsx_returns_400_without_database_write(self):
+        self.client.force_login(self.staff_user)
+        upload = SimpleUploadedFile(
+            "broken.xlsx",
+            b"not a real xlsx file",
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
+        response = self.client.post("/api/imports/prices/", {"file": upload})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("error", response.json())
+        self.assertEqual(PriceImport.objects.count(), 0)
+        self.assertEqual(Part.objects.count(), 0)
+
+    def test_unsupported_file_type_returns_400(self):
+        self.client.force_login(self.staff_user)
+        upload = SimpleUploadedFile("price.txt", b"hello", content_type="text/plain")
+
+        response = self.client.post("/api/imports/prices/", {"file": upload})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(PriceImport.objects.count(), 0)

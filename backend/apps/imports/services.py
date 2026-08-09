@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import csv
+from zipfile import BadZipFile
 from dataclasses import dataclass
 from io import StringIO
 
 from django.db import transaction
+from openpyxl.utils.exceptions import InvalidFileException
 from openpyxl import load_workbook
 
 from apps.catalog.models import Brand, Category, Manufacturer, Part, PartNumber, PriceOffer, Supplier
@@ -142,12 +144,18 @@ def parse_price_import_file(filename: str, content: bytes) -> list[PriceImportRo
     if filename.lower().endswith(".xlsx"):
         from io import BytesIO
 
-        workbook = load_workbook(filename=BytesIO(content), read_only=True, data_only=True)
-        sheet = workbook.active
-        table = [[cell if cell is not None else "" for cell in row] for row in sheet.iter_rows(values_only=True)]
+        try:
+            workbook = load_workbook(filename=BytesIO(content), read_only=True, data_only=True)
+            sheet = workbook.active
+            table = [[cell if cell is not None else "" for cell in row] for row in sheet.iter_rows(values_only=True)]
+        except (BadZipFile, InvalidFileException, OSError, ValueError) as exc:
+            raise PriceImportParseError("Не удалось прочитать XLSX: файл поврежден или имеет неверный формат.") from exc
     else:
         table = rows_from_csv(content)
-    return parse_table(table)
+    rows = parse_table(table)
+    if not rows:
+        raise PriceImportParseError("В файле не найдены строки с обязательными колонками: название и артикул.")
+    return rows
 
 
 def get_or_create_brand(value: str) -> Brand:

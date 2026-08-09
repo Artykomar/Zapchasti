@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowRight, Car, PackageCheck } from "lucide-react";
 import ProductActions from "@/src/components/ProductActions";
 import { formatPrice } from "@/src/data/catalog";
-import { getBrandBySlug, getBrandSlugs, getPartsByBrandSlug } from "@/src/server/db/catalog";
+import { getBrandBySlug, getPartsByBrandSlug } from "@/src/server/django/catalog";
 
 export const dynamic = "force-dynamic";
 
@@ -13,13 +13,9 @@ type BrandPageProps = {
   }>;
 };
 
-export function generateStaticParams() {
-  return getBrandSlugs().map((brand) => ({ brand }));
-}
-
 export async function generateMetadata({ params }: BrandPageProps) {
   const { brand: brandSlug } = await params;
-  const brand = getBrandBySlug(brandSlug);
+  const brand = await getBrandBySlug(brandSlug);
 
   if (!brand) {
     return {
@@ -35,13 +31,13 @@ export async function generateMetadata({ params }: BrandPageProps) {
 
 export default async function BrandCategoryPage({ params }: BrandPageProps) {
   const { brand: brandSlug } = await params;
-  const brand = getBrandBySlug(brandSlug);
+  const brand = await getBrandBySlug(brandSlug);
 
   if (!brand) {
     notFound();
   }
 
-  const brandParts = getPartsByBrandSlug(brand.slug);
+  const brandParts = await getPartsByBrandSlug(brand.slug);
 
   return (
     <main className="page-shell">
