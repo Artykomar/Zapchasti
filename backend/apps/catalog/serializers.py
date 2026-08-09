@@ -1,16 +1,10 @@
 from rest_framework import serializers
 
-from .models import Brand, CarModel, Category, ModelGeneration, Part, PriceOffer
-
-
-class ModelGenerationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ModelGeneration
-        fields = ["name"]
+from .models import Brand, CarModel, Category, Part, PriceOffer
 
 
 class CarModelSerializer(serializers.ModelSerializer):
-    generations = ModelGenerationSerializer(many=True, read_only=True)
+    generations = serializers.SlugRelatedField(many=True, read_only=True, slug_field="name")
 
     class Meta:
         model = CarModel
@@ -85,7 +79,10 @@ class PartSerializer(serializers.ModelSerializer):
         return part.legacy_id or part.slug or str(part.pk)
 
     def get_primary_offer(self, part: Part) -> PriceOffer | None:
-        return part.price_offers.filter(is_primary=True).first()
+        for offer in part.price_offers.all():
+            if offer.is_primary:
+                return offer
+        return None
 
     def get_price(self, part: Part) -> int:
         offer = self.get_primary_offer(part)
@@ -104,10 +101,10 @@ class PartSerializer(serializers.ModelSerializer):
         return offer.stock if offer else ""
 
     def get_analogs(self, part: Part) -> list[str]:
-        return list(part.numbers.filter(kind="analog").values_list("value", flat=True))
+        return [number.value for number in part.numbers.all() if number.kind == "analog"]
 
     def get_compatibility(self, part: Part) -> list[str]:
-        return list(part.compatibility.values_list("label", flat=True))
+        return [item.label for item in part.compatibility.all()]
 
     def get_specs(self, part: Part) -> dict[str, str]:
         return {item.name: item.value for item in part.specs.all()}

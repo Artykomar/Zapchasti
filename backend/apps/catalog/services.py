@@ -19,6 +19,42 @@ from .models import (
     Supplier,
 )
 
+CYRILLIC_TRANSLITERATION = {
+    "а": "a",
+    "б": "b",
+    "в": "v",
+    "г": "g",
+    "д": "d",
+    "е": "e",
+    "ё": "e",
+    "ж": "zh",
+    "з": "z",
+    "и": "i",
+    "й": "y",
+    "к": "k",
+    "л": "l",
+    "м": "m",
+    "н": "n",
+    "о": "o",
+    "п": "p",
+    "р": "r",
+    "с": "s",
+    "т": "t",
+    "у": "u",
+    "ф": "f",
+    "х": "h",
+    "ц": "ts",
+    "ч": "ch",
+    "ш": "sh",
+    "щ": "sch",
+    "ъ": "",
+    "ы": "y",
+    "ь": "",
+    "э": "e",
+    "ю": "yu",
+    "я": "ya",
+}
+
 
 def normalize_search(value: str) -> str:
     return re.sub(r"\s+", " ", value.strip().lower())
@@ -63,8 +99,17 @@ def build_part_search_text(
     return normalize_search(" ".join(item for item in parts if item))
 
 
-def stable_slug(value: str, fallback: str = "item") -> str:
-    return slugify(value, allow_unicode=False) or fallback
+def transliterate_cyrillic(value: str) -> str:
+    return "".join(CYRILLIC_TRANSLITERATION.get(char.lower(), char) for char in value)
+
+
+def stable_slug(value: str, fallback: str = "item", max_length: int | None = None) -> str:
+    slug = slugify(transliterate_cyrillic(value), allow_unicode=False)
+
+    if max_length is not None:
+        slug = slug[:max_length].strip("-")
+
+    return slug or fallback
 
 
 @transaction.atomic

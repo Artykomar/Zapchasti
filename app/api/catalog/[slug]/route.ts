@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getPartBySlug } from "@/src/server/db/catalog";
+import { fetchDjangoRaw } from "@/src/server/django/client";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,11 +16,22 @@ type CatalogPartRouteProps = {
 
 export async function GET(_request: Request, { params }: CatalogPartRouteProps) {
   const { slug } = await params;
-  const part = getPartBySlug(slug);
 
-  if (!part) {
-    return NextResponse.json({ error: "Товар не найден" }, { status: 404, headers: jsonHeaders });
+  try {
+    const upstream = await fetchDjangoRaw(`/api/catalog/${encodeURIComponent(slug)}/`, {
+      headers: {
+        Accept: "application/json"
+      }
+    });
+
+    return new NextResponse(await upstream.text(), {
+      status: upstream.status,
+      headers: jsonHeaders
+    });
+  } catch {
+    return NextResponse.json(
+      { error: "Django API is unavailable" },
+      { status: 502, headers: jsonHeaders }
+    );
   }
-
-  return NextResponse.json({ part }, { headers: jsonHeaders });
 }

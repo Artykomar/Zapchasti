@@ -4,11 +4,14 @@ from rest_framework.response import Response
 
 from .models import CustomerRequest
 from .serializers import CustomerRequestCreateSerializer
+from .throttles import CustomerRequestRateThrottle
 
 
 class CustomerRequestCreateAPIView(CreateAPIView):
     queryset = CustomerRequest.objects.all()
     serializer_class = CustomerRequestCreateSerializer
+    throttle_classes = [CustomerRequestRateThrottle]
+    throttle_scope = "customer_requests"
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

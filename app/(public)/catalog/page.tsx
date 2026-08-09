@@ -1,5 +1,5 @@
 import CatalogExplorer from "@/src/components/CatalogExplorer";
-import { getCatalogSnapshot } from "@/src/server/db/catalog";
+import { getCatalogSnapshot } from "@/src/server/django/catalog";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +13,7 @@ type CatalogPageProps = {
 
 export default async function CatalogPage({ searchParams }: CatalogPageProps) {
   const params = (await searchParams) ?? {};
-  const baseCatalog = getCatalogSnapshot();
+  const baseCatalog = await getCatalogSnapshot({ limit: 1 });
   const requestedBrand = params.brand ?? "all";
   const initialBrand =
     baseCatalog.brands.find((brand) => brand.slug === requestedBrand || brand.name === requestedBrand)?.slug ??
@@ -23,7 +23,7 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
     baseCatalog.categories.find(
       (category) => category.slug === requestedCategory || category.name === requestedCategory
     )?.slug ?? "all";
-  const catalog = getCatalogSnapshot({
+  const catalog = await getCatalogSnapshot({
     query: params.q,
     brandSlug: initialBrand === "all" ? undefined : initialBrand,
     categorySlug: initialCategory === "all" ? undefined : initialCategory
@@ -36,7 +36,7 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
         <h1>Автозапчасти по маркам, категориям и артикулам</h1>
         <p>
           Витрина показывает рабочую структуру магазина: фильтры, поиск, карточки товаров,
-          избранное и добавление в корзину-заявку. Данные уже читаются через серверный API и стартовую SQLite-базу.
+          избранное и добавление в корзину-заявку. Данные читаются через основной Django API.
         </p>
       </section>
 

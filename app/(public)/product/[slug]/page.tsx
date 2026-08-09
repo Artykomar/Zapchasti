@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowRight, CheckCircle2, PackageCheck, ShieldCheck, Truck } from "lucide-react";
 import ProductActions from "@/src/components/ProductActions";
 import { formatPrice } from "@/src/data/catalog";
-import { getPartBySlug, getPartSlugs, getSimilarParts } from "@/src/server/db/catalog";
+import { getPartBySlug, getSimilarParts } from "@/src/server/django/catalog";
 
 export const dynamic = "force-dynamic";
 
@@ -13,13 +13,9 @@ type ProductPageProps = {
   }>;
 };
 
-export function generateStaticParams() {
-  return getPartSlugs().map((slug) => ({ slug }));
-}
-
 export async function generateMetadata({ params }: ProductPageProps) {
   const { slug } = await params;
-  const part = getPartBySlug(slug);
+  const part = await getPartBySlug(slug);
 
   if (!part) {
     return {
@@ -35,13 +31,13 @@ export async function generateMetadata({ params }: ProductPageProps) {
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
-  const part = getPartBySlug(slug);
+  const part = await getPartBySlug(slug);
 
   if (!part) {
     notFound();
   }
 
-  const similarParts = getSimilarParts(part, 4);
+  const similarParts = await getSimilarParts(part, 4);
 
   return (
     <main className="page-shell">
