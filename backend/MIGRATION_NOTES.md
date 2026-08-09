@@ -26,3 +26,11 @@
 - Rich Django admin workflows for status changes, comments and import preview.
 - Production auth hardening: roles, 2FA, audit log and backups.
 - Real supplier feeds, product photos and real contact/legal content.
+
+## Security rule: SQL injection
+
+Use Django ORM query methods and parameterized queries for all database access.
+Do not build raw SQL with f-strings, string concatenation, `%` formatting or
+`.format()` using user input. If raw SQL becomes unavoidable, pass user values
+through Django cursor parameters, keep the query small and add a regression test
+for hostile input.
