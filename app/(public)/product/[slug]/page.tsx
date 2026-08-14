@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, CheckCircle2, PackageCheck, ShieldCheck, Truck } from "lucide-react";
 import ProductActions from "@/src/components/ProductActions";
-import { formatPrice } from "@/src/data/catalog";
+import { formatPrice, getProductPath } from "@/src/data/catalog";
 import { getPartBySlug, getSimilarParts } from "@/src/server/django/catalog";
 
 export const dynamic = "force-dynamic";
@@ -136,7 +136,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         </div>
         <div className="related-grid">
           {similarParts.map((item) => (
-            <Link key={item.id} className="category-card" href={`/product/${item.slug}`}>
+            <Link key={item.id} className="category-card" href={getProductPath(item)}>
               <PackageCheck size={22} aria-hidden="true" />
               <strong>{item.name}</strong>
               <span>{item.brand} {item.model}, {formatPrice(item.price)}</span>

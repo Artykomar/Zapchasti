@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import ProductActions from "@/src/components/ProductActions";
 import type { Brand, Category, Part } from "@/src/data/catalog";
-import { formatPrice, getPartSearchText } from "@/src/data/catalog";
+import { formatPrice, getPartSearchText, getProductPath } from "@/src/data/catalog";
 import { useMemo, useState } from "react";
 
 type HomePageClientProps = {
@@ -256,14 +256,14 @@ export default function HomePageClient({ brands, categories, parts }: HomePageCl
           {filteredParts.length > 0 ? (
             filteredParts.map((part) => (
               <article key={part.id} className="product-card">
-                <Link href={`/product/${part.slug}`} className="product-card__visual">
+                <Link href={getProductPath(part)} className="product-card__visual">
                   <Cog size={42} aria-hidden="true" />
                   <span>{part.category}</span>
                 </Link>
                 <div className="product-card__body">
                   <span className="tag">{part.quality}</span>
                   <h3>
-                    <Link href={`/product/${part.slug}`}>{part.name}</Link>
+                    <Link href={getProductPath(part)}>{part.name}</Link>
                   </h3>
                   <dl>
                     <div>

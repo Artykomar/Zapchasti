@@ -39,4 +39,16 @@ class CatalogApiTests(TestCase):
         self.assertEqual(response.json()["parts"], [])
         self.assertEqual(Part.objects.count(), 12)
 
+    def test_catalog_detail_accepts_article_identifier(self):
+        response = self.client.get("/api/catalog/ZP-LGT-5015L/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["part"]["slug"], "octavia-led-headlamp-left")
+
+    def test_catalog_detail_accepts_normalized_part_number(self):
+        response = self.client.get("/api/catalog/zplgt5015l/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["part"]["article"], "ZP-LGT-5015L")
+
 # Create your tests here.

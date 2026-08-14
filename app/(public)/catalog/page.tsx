@@ -8,6 +8,7 @@ type CatalogPageProps = {
     q?: string;
     brand?: string;
     category?: string;
+    condition?: string;
   }>;
 };
 
@@ -23,10 +24,12 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
     baseCatalog.categories.find(
       (category) => category.slug === requestedCategory || category.name === requestedCategory
     )?.slug ?? "all";
+  const initialCondition = params.condition ?? "all";
   const catalog = await getCatalogSnapshot({
     query: params.q,
     brandSlug: initialBrand === "all" ? undefined : initialBrand,
-    categorySlug: initialCategory === "all" ? undefined : initialCategory
+    categorySlug: initialCategory === "all" ? undefined : initialCategory,
+    condition: initialCondition === "all" ? undefined : initialCondition
   });
 
   return (
@@ -47,6 +50,7 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
         initialQuery={params.q ?? ""}
         initialBrand={initialBrand}
         initialCategory={initialCategory}
+        initialCondition={initialCondition}
       />
     </main>
   );

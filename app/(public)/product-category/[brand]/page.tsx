@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, Car, PackageCheck } from "lucide-react";
 import ProductActions from "@/src/components/ProductActions";
-import { formatPrice } from "@/src/data/catalog";
+import { formatPrice, getProductPath } from "@/src/data/catalog";
 import { getBrandBySlug, getPartsByBrandSlug } from "@/src/server/django/catalog";
 
 export const dynamic = "force-dynamic";
@@ -65,14 +65,14 @@ export default async function BrandCategoryPage({ params }: BrandPageProps) {
         {brandParts.length > 0 ? (
           brandParts.map((part) => (
             <article key={part.id} className="wide-product">
-              <Link className="wide-product__visual" href={`/product/${part.slug}`}>
+              <Link className="wide-product__visual" href={getProductPath(part)}>
                 <PackageCheck size={42} aria-hidden="true" />
                 <span>{part.condition}</span>
               </Link>
               <div className="wide-product__content">
                 <span className="tag">{part.category}</span>
                 <h2>
-                  <Link href={`/product/${part.slug}`}>{part.name}</Link>
+                  <Link href={getProductPath(part)}>{part.name}</Link>
                 </h2>
                 <p>{part.delivery}</p>
                 <div className="spec-list">
@@ -85,7 +85,7 @@ export default async function BrandCategoryPage({ params }: BrandPageProps) {
               <div className="wide-product__action">
                 <strong>{formatPrice(part.price)}</strong>
                 <ProductActions part={part} compact />
-                <Link href={`/product/${part.slug}`} className="text-action">
+                <Link href={getProductPath(part)} className="text-action">
                   Подробнее
                   <ArrowRight size={17} aria-hidden="true" />
                 </Link>

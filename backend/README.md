@@ -1,13 +1,13 @@
 # Zemazap Django backend
 
 This folder is the Django migration target for the Zemazap backend. The old
-Next.js backend remains on the `main` branch as a backup; the Django backend is
-developed on `master`.
+Django migration branch has become the active project state: Next.js is now the
+public frontend and Django is the only backend/admin surface.
 
 ## Local setup
 
 ```powershell
-cd C:\Users\ArtyM\Documents\Website
+cd C:\Users\Arsik\Documents\ChatGPT\Сайт\Zapchasti
 .\.venv\Scripts\python.exe -m pip install -r backend\requirements.txt
 .\.venv\Scripts\python.exe backend\manage.py migrate
 .\.venv\Scripts\python.exe backend\manage.py seed_demo
@@ -45,7 +45,7 @@ enabled by default outside development, and DRF Browsable API is disabled.
 
 ## PyCharm
 
-Open the repository root `C:\Users\ArtyM\Documents\Website` in PyCharm. The
+Open the repository root `C:\Users\Arsik\Documents\ChatGPT\Сайт\Zapchasti` in PyCharm. The
 project includes Git metadata and a Django run configuration. On a fresh clone,
 create `.venv`, install `backend\requirements.txt`, run migrations and seed the
 demo catalog.
@@ -54,10 +54,10 @@ Useful commands from the PyCharm terminal:
 
 ```powershell
 git status -sb
-git pull --ff-only origin master
+git pull --ff-only origin main
 .\.venv\Scripts\python.exe backend\manage.py check
 .\.venv\Scripts\python.exe backend\manage.py test apps.catalog apps.leads apps.imports apps.notifications
 git add .gitignore .idea backend
 git commit -m "Describe the backend change"
-git push origin master
+git push origin main
 ```

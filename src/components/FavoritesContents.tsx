@@ -2,39 +2,31 @@
 
 import Link from "next/link";
 import { Heart, ShoppingCart, Trash2 } from "lucide-react";
-import { formatPrice } from "@/src/data/catalog";
-import { catalogStorageKeys, type StoredCatalogItem } from "@/src/components/ProductActions";
+import { formatPrice, getProductPath } from "@/src/data/catalog";
+import {
+  catalogStorageEventName,
+  catalogStorageKeys,
+  readStoredCatalogItems,
+  type StoredCatalogItem,
+  writeStoredCatalogItems
+} from "@/src/components/catalogStorage";
 import { useEffect, useState } from "react";
 
-const readFavorites = (): StoredCatalogItem[] => {
-  if (typeof window === "undefined") {
-    return [];
-  }
-
-  try {
-    const value = window.localStorage.getItem(catalogStorageKeys.favorites);
-    return value ? (JSON.parse(value) as StoredCatalogItem[]) : [];
-  } catch {
-    return [];
-  }
-};
-
 const write = (key: string, items: StoredCatalogItem[]) => {
-  window.localStorage.setItem(key, JSON.stringify(items));
-  window.dispatchEvent(new CustomEvent("zemazap-storage"));
+  writeStoredCatalogItems(key, items);
 };
 
 export default function FavoritesContents() {
   const [items, setItems] = useState<StoredCatalogItem[]>([]);
 
   useEffect(() => {
-    const sync = () => setItems(readFavorites());
+    const sync = () => setItems(readStoredCatalogItems(catalogStorageKeys.favorites));
     sync();
-    window.addEventListener("zemazap-storage", sync);
+    window.addEventListener(catalogStorageEventName, sync);
     window.addEventListener("storage", sync);
 
     return () => {
-      window.removeEventListener("zemazap-storage", sync);
+      window.removeEventListener(catalogStorageEventName, sync);
       window.removeEventListener("storage", sync);
     };
   }, []);
@@ -46,8 +38,7 @@ export default function FavoritesContents() {
   };
 
   const addToCart = (item: StoredCatalogItem) => {
-    const cartValue = window.localStorage.getItem(catalogStorageKeys.cart);
-    const cart = cartValue ? (JSON.parse(cartValue) as StoredCatalogItem[]) : [];
+    const cart = readStoredCatalogItems(catalogStorageKeys.cart);
     const next = cart.some((entry) => entry.id === item.id) ? cart : [...cart, item];
     write(catalogStorageKeys.cart, next);
   };
@@ -65,7 +56,7 @@ export default function FavoritesContents() {
             <article key={item.id} className="cart-item">
               <div>
                 <h3>
-                  <Link href={`/product/${item.slug}`}>{item.name}</Link>
+                  <Link href={getProductPath(item)}>{item.name}</Link>
                 </h3>
                 <p>
                   {item.brand} {item.model}, арт. {item.article}

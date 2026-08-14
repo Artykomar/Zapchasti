@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ArrowRight, Filter, PackageCheck, Search } from "lucide-react";
 import ProductActions from "@/src/components/ProductActions";
 import type { Brand, Category, Part } from "@/src/data/catalog";
-import { formatPrice } from "@/src/data/catalog";
+import { formatPrice, getPartSearchText, getProductPath } from "@/src/data/catalog";
 import { useEffect, useState } from "react";
 
 type CatalogExplorerProps = {
@@ -14,9 +14,52 @@ type CatalogExplorerProps = {
   initialQuery?: string;
   initialBrand?: string;
   initialCategory?: string;
+  initialCondition?: string;
 };
 
 const allValue = "all";
+
+type SelectedCatalogFilters = {
+  query: string;
+  brand: string;
+  category: string;
+  condition: string;
+};
+
+const buildCatalogParams = ({ query, brand, category, condition }: SelectedCatalogFilters) => {
+  const params = new URLSearchParams();
+
+  if (query.trim()) {
+    params.set("q", query.trim());
+  }
+
+  if (brand !== allValue) {
+    params.set("brand", brand);
+  }
+
+  if (category !== allValue) {
+    params.set("category", category);
+  }
+
+  if (condition !== allValue) {
+    params.set("condition", condition);
+  }
+
+  return params;
+};
+
+const applyLocalFilters = (parts: Part[], filters: SelectedCatalogFilters) => {
+  const normalizedQuery = filters.query.trim().toLowerCase();
+
+  return parts.filter((part) => {
+    const matchesQuery = !normalizedQuery || getPartSearchText(part).includes(normalizedQuery);
+    const matchesBrand = filters.brand === allValue || part.brandSlug === filters.brand;
+    const matchesCategory = filters.category === allValue || part.categorySlug === filters.category;
+    const matchesCondition = filters.condition === allValue || part.condition === filters.condition;
+
+    return matchesQuery && matchesBrand && matchesCategory && matchesCondition;
+  });
+};
 
 export default function CatalogExplorer({
   parts,
@@ -24,40 +67,36 @@ export default function CatalogExplorer({
   categories,
   initialQuery = "",
   initialBrand = allValue,
-  initialCategory = allValue
+  initialCategory = allValue,
+  initialCondition = allValue
 }: CatalogExplorerProps) {
   const [query, setQuery] = useState(initialQuery);
   const [brand, setBrand] = useState(initialBrand);
   const [category, setCategory] = useState(initialCategory);
-  const [condition, setCondition] = useState(allValue);
+  const [condition, setCondition] = useState(initialCondition);
   const [filteredParts, setFilteredParts] = useState(parts);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     const controller = new AbortController();
-    const params = new URLSearchParams();
+    const selectedFilters = { query, brand, category, condition };
+    const params = buildCatalogParams(selectedFilters);
+    const fetchParams = new URLSearchParams(params);
+    const nextSearch = params.toString();
 
-    if (query.trim()) {
-      params.set("q", query.trim());
+    setFilteredParts(applyLocalFilters(parts, selectedFilters));
+
+    if (typeof window !== "undefined") {
+      const nextUrl = nextSearch ? `${window.location.pathname}?${nextSearch}` : window.location.pathname;
+      window.history.replaceState(null, "", nextUrl);
     }
 
-    if (brand !== allValue) {
-      params.set("brand", brand);
-    }
-
-    if (category !== allValue) {
-      params.set("category", category);
-    }
-
-    if (condition !== allValue) {
-      params.set("condition", condition);
-    }
-
+    fetchParams.set("limit", "200");
     setIsLoading(true);
     setErrorMessage("");
 
-    fetch(`/api/catalog?${params.toString()}`, { signal: controller.signal })
+    fetch(`/api/catalog?${fetchParams.toString()}`, { signal: controller.signal })
       .then(async (response) => {
         const data = (await response.json()) as { parts?: Part[]; error?: string };
 
@@ -81,7 +120,7 @@ export default function CatalogExplorer({
       });
 
     return () => controller.abort();
-  }, [brand, category, condition, query]);
+  }, [brand, category, condition, parts, query]);
 
   return (
     <>
@@ -188,14 +227,14 @@ export default function CatalogExplorer({
           {filteredParts.length > 0 ? (
             filteredParts.map((part) => (
               <article key={part.id} className="wide-product">
-                <Link className="wide-product__visual" href={`/product/${part.slug}`}>
+                <Link className="wide-product__visual" href={getProductPath(part)}>
                   <PackageCheck size={42} aria-hidden="true" />
                   <span>{part.condition}</span>
                 </Link>
                 <div className="wide-product__content">
                   <span className="tag">{part.category}</span>
                   <h2>
-                    <Link href={`/product/${part.slug}`}>{part.name}</Link>
+                    <Link href={getProductPath(part)}>{part.name}</Link>
                   </h2>
                   <p>{part.delivery}</p>
                   <div className="spec-list">
@@ -209,7 +248,7 @@ export default function CatalogExplorer({
                   <strong>{formatPrice(part.price)}</strong>
                   <span>{part.availability}</span>
                   <ProductActions part={part} compact />
-                  <Link href={`/product/${part.slug}`} className="text-action">
+                  <Link href={getProductPath(part)} className="text-action">
                     Подробнее
                     <ArrowRight size={17} aria-hidden="true" />
                   </Link>

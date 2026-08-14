@@ -2,27 +2,22 @@
 
 import Link from "next/link";
 import { Minus, Plus, Send, ShoppingCart, Trash2 } from "lucide-react";
-import { formatPrice } from "@/src/data/catalog";
-import { catalogStorageKeys, type StoredCatalogItem } from "@/src/components/ProductActions";
+import { formatPrice, getProductPath } from "@/src/data/catalog";
+import {
+  catalogStorageEventName,
+  catalogStorageKeys,
+  readStoredCatalogItems,
+  type StoredCatalogItem,
+  writeStoredCatalogItems
+} from "@/src/components/catalogStorage";
 import { useEffect, useMemo, useState } from "react";
 
-const readCart = (): StoredCatalogItem[] => {
-  if (typeof window === "undefined") {
-    return [];
-  }
-
-  try {
-    const value = window.localStorage.getItem(catalogStorageKeys.cart);
-    return value ? (JSON.parse(value) as StoredCatalogItem[]) : [];
-  } catch {
-    return [];
-  }
-};
-
 const writeCart = (items: StoredCatalogItem[]) => {
-  window.localStorage.setItem(catalogStorageKeys.cart, JSON.stringify(items));
-  window.dispatchEvent(new CustomEvent("zemazap-storage"));
+  writeStoredCatalogItems(catalogStorageKeys.cart, items);
 };
+
+const stripNumbers = (value: string) => value.replace(/\p{N}/gu, "");
+const keepDigitsOnly = (value: string) => value.replace(/\D/g, "");
 
 export default function CartContents() {
   const [items, setItems] = useState<StoredCatalogItem[]>([]);
@@ -37,13 +32,13 @@ export default function CartContents() {
   >({ status: "idle" });
 
   useEffect(() => {
-    const sync = () => setItems(readCart());
+    const sync = () => setItems(readStoredCatalogItems(catalogStorageKeys.cart));
     sync();
-    window.addEventListener("zemazap-storage", sync);
+    window.addEventListener(catalogStorageEventName, sync);
     window.addEventListener("storage", sync);
 
     return () => {
-      window.removeEventListener("zemazap-storage", sync);
+      window.removeEventListener(catalogStorageEventName, sync);
       window.removeEventListener("storage", sync);
     };
   }, []);
@@ -54,9 +49,9 @@ export default function CartContents() {
   );
 
   const updateQuantity = (id: string, delta: number) => {
-    const next = items.map((item) =>
-      item.id === id ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item
-    );
+    const next = items
+      .map((item) => (item.id === id ? { ...item, quantity: item.quantity + delta } : item))
+      .filter((item) => item.quantity > 0);
     setItems(next);
     writeCart(next);
   };
@@ -129,7 +124,7 @@ export default function CartContents() {
               <article key={item.id} className="cart-item">
                 <div>
                   <h3>
-                    <Link href={`/product/${item.slug}`}>{item.name}</Link>
+                    <Link href={getProductPath(item)}>{item.name}</Link>
                   </h3>
                   <p>
                     {item.brand} {item.model}, арт. {item.article}
@@ -166,14 +161,23 @@ export default function CartContents() {
         <p>Цена предварительная. Менеджер подтвердит наличие, состояние, срок доставки и применимость.</p>
         <label>
           Имя
-          <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Как к вам обращаться" />
+          <input
+            value={name}
+            onChange={(event) => setName(stripNumbers(event.target.value))}
+            placeholder="Как к вам обращаться"
+            autoComplete="name"
+          />
         </label>
         <label>
           Телефон или мессенджер
           <input
+            type="tel"
+            inputMode="numeric"
+            pattern="[0-9]*"
             value={contact}
-            onChange={(event) => setContact(event.target.value)}
-            placeholder="+7 (___) ___-__-__"
+            onChange={(event) => setContact(keepDigitsOnly(event.target.value))}
+            placeholder="79990000000"
+            autoComplete="tel"
           />
         </label>
         <label className="checkbox-row">

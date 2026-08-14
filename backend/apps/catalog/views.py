@@ -1,8 +1,10 @@
+from django.db.models import Q
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Brand, Category, Part
 from .serializers import BrandSerializer, CategorySerializer, PartSerializer
+from .services import normalize_part_number
 
 
 def filtered_parts(request):
@@ -55,10 +57,18 @@ class CatalogListAPIView(APIView):
 
 class CatalogDetailAPIView(APIView):
     def get(self, request, slug: str):
+        normalized_number = normalize_part_number(slug)
         part = (
-            Part.objects.filter(slug=slug, is_active=True)
+            Part.objects.filter(is_active=True)
+            .filter(
+                Q(slug=slug)
+                | Q(legacy_id=slug)
+                | Q(primary_article__iexact=slug)
+                | Q(numbers__normalized_value=normalized_number)
+            )
             .select_related("brand", "category", "manufacturer")
             .prefetch_related("numbers", "compatibility", "specs", "price_offers")
+            .distinct()
             .first()
         )
 

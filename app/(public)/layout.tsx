@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Clock, Heart, MapPin, MessageCircle, Phone, ShoppingCart } from "lucide-react";
+import { Clock, Heart, MapPin, MessageCircle, Phone } from "lucide-react";
+import HeaderCartLink from "@/src/components/HeaderCartLink";
 
 const navItems = [
   { href: "/catalog", label: "Каталог" },
@@ -57,10 +58,7 @@ export default function PublicLayout({
             <Link className="icon-link" href="/izbrannoe" aria-label="Избранное">
               <Heart size={18} aria-hidden="true" />
             </Link>
-            <Link className="cart-link" href="/cart">
-              <ShoppingCart size={18} aria-hidden="true" />
-              <span>Корзина</span>
-            </Link>
+            <HeaderCartLink />
           </div>
         </div>
       </header>

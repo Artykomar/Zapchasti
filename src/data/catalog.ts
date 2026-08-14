@@ -516,6 +516,12 @@ export const formatPrice = (value: number) =>
 
 export const normalize = (value: string) => value.trim().toLowerCase();
 
+export const getProductIdentifier = (part: Pick<Part, "slug"> & Partial<Pick<Part, "article">>) =>
+  part.article?.trim() || part.slug;
+
+export const getProductPath = (part: Pick<Part, "slug"> & Partial<Pick<Part, "article">>) =>
+  `/product/${encodeURIComponent(getProductIdentifier(part))}`;
+
 export const findPartBySlug = (slug: string) => parts.find((part) => part.slug === slug);
 
 export const getPartsByBrandSlug = (brandSlug: string) =>

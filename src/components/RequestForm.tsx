@@ -20,6 +20,8 @@ type SubmitState =
     };
 
 const initialSubmitState: SubmitState = { status: "idle" };
+const stripNumbers = (value: string) => value.replace(/\p{N}/gu, "");
+const keepDigitsOnly = (value: string) => value.replace(/\D/g, "");
 
 export default function RequestForm() {
   const [customerName, setCustomerName] = useState("");
@@ -85,17 +87,22 @@ export default function RequestForm() {
         <input
           name="name"
           value={customerName}
-          onChange={(event) => setCustomerName(event.target.value)}
+          onChange={(event) => setCustomerName(stripNumbers(event.target.value))}
           placeholder="Как к вам обращаться"
+          autoComplete="name"
         />
       </label>
       <label>
         Телефон или мессенджер
         <input
+          type="tel"
+          inputMode="numeric"
           name="phone"
+          pattern="[0-9]*"
           value={contact}
-          onChange={(event) => setContact(event.target.value)}
-          placeholder="+7 (___) ___-__-__"
+          onChange={(event) => setContact(keepDigitsOnly(event.target.value))}
+          placeholder="79990000000"
+          autoComplete="tel"
         />
       </label>
       <label>
