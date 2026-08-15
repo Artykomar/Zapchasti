@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     "apps.leads",
     "apps.orders",
     "apps.payments",
+    "apps.fiscal",
     "apps.imports",
     "apps.notifications",
 ]

@@ -91,6 +91,10 @@ def apply_mock_payment_callback(public_id: str, status: str) -> Payment:
         payment.order.save(update_fields=["status", "updated_at"])
         OrderStatusHistory.objects.create(order=payment.order, status=payment.order.status, note="Mock payment paid.")
         PaymentEvent.objects.create(payment=payment, event_type="mock_callback_paid", payload={"status": status})
+        if getattr(settings, "FISCALIZATION_ENABLED", False):
+            from apps.fiscal.services import create_test_sale_receipt_for_payment
+
+            create_test_sale_receipt_for_payment(payment)
         return payment
 
     if normalized_status in {"failed", "fail", "declined"}:

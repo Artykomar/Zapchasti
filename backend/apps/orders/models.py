@@ -83,6 +83,11 @@ class OrderItem(models.Model):
     unit_price_rub = models.PositiveIntegerField(default=0)
     line_total_rub = models.PositiveIntegerField(default=0)
     condition_snapshot = models.CharField(max_length=120, blank=True)
+    fiscal_name = models.CharField(max_length=128, blank=True)
+    vat_label = models.CharField(max_length=80, default="НДС не задан")
+    payment_subject = models.CharField(max_length=80, default="commodity")
+    payment_method = models.CharField(max_length=80, default="full_payment")
+    unit = models.CharField(max_length=40, default="шт.")
     delivery_snapshot = models.CharField(max_length=160, blank=True)
     warranty_snapshot = models.CharField(max_length=160, blank=True)
 
