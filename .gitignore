@@ -12,6 +12,7 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 htmlcov/
+tmp/
 backend/.env
 backend/*.sqlite3
 backend/data/*.sqlite3
