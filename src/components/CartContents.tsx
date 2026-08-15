@@ -76,6 +76,7 @@ export default function CartContents() {
           customerName: name,
           contact,
           privacyAccepted,
+          consentSource: "cart",
           requestText: "Корзина-заявка с сайта",
           items: items.map((item) => ({
             id: item.id,
@@ -185,8 +186,12 @@ export default function CartContents() {
             type="checkbox"
             checked={privacyAccepted}
             onChange={(event) => setPrivacyAccepted(event.target.checked)}
-          />
-          <span>Согласен на обработку персональных данных после добавления юридического текста</span>
+        />
+          <span>
+            Согласен на обработку персональных данных по{" "}
+            <Link href="/personal-data-consent">согласию</Link> и{" "}
+            <Link href="/privacy-policy">политике</Link>
+          </span>
         </label>
         <button
           type="button"

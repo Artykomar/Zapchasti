@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Clock, Heart, MapPin, MessageCircle, Phone } from "lucide-react";
 import HeaderCartLink from "@/src/components/HeaderCartLink";
+import { siteConfig } from "@/src/server/siteConfig";
 
 const navItems = [
   { href: "/catalog", label: "Каталог" },
@@ -21,15 +22,15 @@ export default function PublicLayout({
         <div className="topline">
           <div className="topline__item">
             <MapPin size={16} aria-hidden="true" />
-            <span>Регион работы уточняется</span>
+            <span>{siteConfig.region}</span>
           </div>
           <div className="topline__item">
             <Clock size={16} aria-hidden="true" />
-            <span>Пн-Сб, график будет задан</span>
+            <span>{siteConfig.businessHours}</span>
           </div>
-          <a className="topline__item" href="tel:+70000000000">
+          <a className="topline__item" href={`tel:${siteConfig.phoneHref}`}>
             <Phone size={16} aria-hidden="true" />
-            <span>+7 (000) 000-00-00</span>
+            <span>{siteConfig.phoneLabel}</span>
           </a>
           <a className="topline__item" href="/request">
             <MessageCircle size={16} aria-hidden="true" />
@@ -39,10 +40,10 @@ export default function PublicLayout({
 
         <div className="mainnav">
           <Link className="brand" href="/" aria-label="На главную">
-            <img className="brand__logo" src="/zemazap-logo.svg" alt="Zemazap" />
+            <img className="brand__logo" src="/zemazap-logo.svg" alt={siteConfig.brandName} />
             <span>
-              <strong>Zemazap</strong>
-              <small>автозапчасти под заказ</small>
+              <strong>{siteConfig.brandName}</strong>
+              <small>{siteConfig.tagline}</small>
             </span>
           </Link>
 
@@ -67,14 +68,16 @@ export default function PublicLayout({
 
       <footer className="site-footer">
         <div>
-          <strong>Zemazap</strong>
+          <strong>{siteConfig.brandName}</strong>
           <p>Мультибрендовые автозапчасти, поиск по номеру, карточки товаров и заказ через подтверждение менеджера.</p>
         </div>
         <div className="site-footer__links">
           <Link href="/catalog">Каталог</Link>
           <Link href="/cart">Корзина</Link>
           <Link href="/delivery">Доставка</Link>
-          <Link href="/privacy-policy">Документы</Link>
+          <Link href="/terms">Условия заказа</Link>
+          <Link href="/privacy-policy">Политика ПДн</Link>
+          <Link href="/personal-data-consent">Согласие ПДн</Link>
           <Link href="/contacts">Контакты</Link>
         </div>
       </footer>

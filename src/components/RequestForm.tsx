@@ -1,6 +1,7 @@
 "use client";
 
 import { Send } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 
 type SubmitState =
@@ -53,7 +54,8 @@ export default function RequestForm() {
           contact,
           vehicle,
           requestText,
-          privacyAccepted
+          privacyAccepted,
+          consentSource: "request_form"
         })
       });
       const result = (await response.json()) as { id?: string; error?: string };
@@ -130,7 +132,11 @@ export default function RequestForm() {
           checked={privacyAccepted}
           onChange={(event) => setPrivacyAccepted(event.target.checked)}
         />
-        <span>Согласен на обработку персональных данных после добавления юридического текста</span>
+        <span>
+          Согласен на обработку персональных данных по{" "}
+          <Link href="/personal-data-consent">согласию</Link> и{" "}
+          <Link href="/privacy-policy">политике</Link>
+        </span>
       </label>
       <button type="button" disabled={!canSubmit} onClick={submitRequest}>
         <Send size={18} aria-hidden="true" />

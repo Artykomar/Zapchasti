@@ -17,6 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
+from apps.core.views import PublicSiteSettingsAPIView
 from apps.catalog.views import CatalogDetailAPIView, CatalogListAPIView
 from apps.imports.views import PriceImportAPIView
 from apps.leads.views import CustomerRequestCreateAPIView
@@ -26,6 +27,8 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/health", health, name="health-no-slash"),
     path("api/health/", health, name="health"),
+    path("api/site-settings", PublicSiteSettingsAPIView.as_view(), name="site-settings-no-slash"),
+    path("api/site-settings/", PublicSiteSettingsAPIView.as_view(), name="site-settings"),
     path("api/catalog", CatalogListAPIView.as_view(), name="catalog-list-no-slash"),
     path("api/catalog/<slug:slug>", CatalogDetailAPIView.as_view(), name="catalog-detail-no-slash"),
     path("api/requests", CustomerRequestCreateAPIView.as_view(), name="request-create-no-slash"),

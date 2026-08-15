@@ -1,4 +1,6 @@
 from django.db import transaction
+from django.conf import settings
+from django.utils import timezone
 from rest_framework import serializers
 
 from apps.catalog.models import Part
@@ -20,6 +22,15 @@ def normalize_contact(value: str) -> str:
     return digits or value.strip().lower()
 
 
+def get_request_ip(request) -> str:
+    if not request:
+        return ""
+    forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR", "")
+    if forwarded_for:
+        return forwarded_for.split(",")[0].strip()
+    return request.META.get("HTTP_X_REAL_IP") or request.META.get("REMOTE_ADDR", "")
+
+
 class CustomerRequestItemInputSerializer(serializers.Serializer):
     id = serializers.CharField(required=False, allow_blank=True)
     name = serializers.CharField(max_length=240)
@@ -33,6 +44,9 @@ class CustomerRequestCreateSerializer(serializers.ModelSerializer):
     contact = serializers.CharField(min_length=5, max_length=160)
     vehicle = serializers.CharField(max_length=240, required=False, allow_blank=True)
     request_text = serializers.CharField(max_length=MAX_REQUEST_TEXT_LENGTH, required=False, allow_blank=True)
+    privacy_policy_version = serializers.CharField(max_length=80, required=False, allow_blank=True)
+    privacy_consent_version = serializers.CharField(max_length=80, required=False, allow_blank=True)
+    consent_source = serializers.CharField(max_length=120, required=False, allow_blank=True)
     items = CustomerRequestItemInputSerializer(many=True, required=False)
     website = serializers.CharField(required=False, allow_blank=True, write_only=True)
     company = serializers.CharField(required=False, allow_blank=True, write_only=True)
@@ -47,6 +61,9 @@ class CustomerRequestCreateSerializer(serializers.ModelSerializer):
             "request_text",
             "source",
             "privacy_accepted",
+            "privacy_policy_version",
+            "privacy_consent_version",
+            "consent_source",
             "total_estimate_rub",
             "items",
             "website",
@@ -64,6 +81,9 @@ class CustomerRequestCreateSerializer(serializers.ModelSerializer):
                 "message": "request_text",
                 "parts": "request_text",
                 "privacyAccepted": "privacy_accepted",
+                "privacyPolicyVersion": "privacy_policy_version",
+                "privacyConsentVersion": "privacy_consent_version",
+                "consentSource": "consent_source",
                 "websiteUrl": "website",
             }
             for source, target in aliases.items():
@@ -96,6 +116,21 @@ class CustomerRequestCreateSerializer(serializers.ModelSerializer):
         validated_data.pop("website", None)
         validated_data.pop("company", None)
         normalized_contact = normalize_contact(validated_data["contact"])
+        request_context = self.context.get("request")
+        consent_ip = get_request_ip(request_context) or None
+        consent_user_agent = request_context.META.get("HTTP_USER_AGENT", "")[:300] if request_context else ""
+        validated_data.setdefault(
+            "privacy_policy_version",
+            getattr(settings, "ZEMAZAP_PRIVACY_POLICY_VERSION", "draft-2026-08-15"),
+        )
+        validated_data.setdefault(
+            "privacy_consent_version",
+            getattr(settings, "ZEMAZAP_PRIVACY_CONSENT_VERSION", "draft-2026-08-15"),
+        )
+        validated_data.setdefault("consent_source", validated_data["source"])
+        validated_data["consent_accepted_at"] = timezone.now()
+        validated_data["consent_ip"] = consent_ip
+        validated_data["consent_user_agent"] = consent_user_agent
         customer, _created = Customer.objects.update_or_create(
             normalized_contact=normalized_contact,
             defaults={

@@ -38,3 +38,21 @@ class NotificationServiceTests(TestCase):
         self.assertIn("Новая заявка Zemazap", text)
         self.assertIn("Артём", text)
         self.assertIn("Skoda Octavia", text)
+
+    def test_safe_notification_text_masks_personal_data(self):
+        customer_request = CustomerRequest.objects.create(
+            customer_name="Артём",
+            contact="+7 999 111-22-33",
+            vehicle="Skoda Octavia",
+            request_text="Нужна фара",
+            source=CustomerRequest.Source.REQUEST_FORM,
+            privacy_accepted=True,
+        )
+
+        text = build_request_notification_text(customer_request, include_pii=False)
+
+        self.assertIn(f"Новая заявка Zemazap #{customer_request.id}", text)
+        self.assertIn("***2233", text)
+        self.assertNotIn("Артём", text)
+        self.assertNotIn("Skoda Octavia", text)
+        self.assertNotIn("Нужна фара", text)

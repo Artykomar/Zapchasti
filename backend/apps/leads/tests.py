@@ -1,6 +1,6 @@
 from django.core.management import call_command
 from django.core.cache import cache
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from .models import CustomerRequest
 
@@ -39,6 +39,39 @@ class CustomerRequestApiTests(TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(CustomerRequest.objects.count(), 1)
         self.assertEqual(CustomerRequest.objects.first().items.count(), 1)
+        customer_request = CustomerRequest.objects.first()
+        self.assertEqual(customer_request.privacy_policy_version, "draft-2026-08-15")
+        self.assertEqual(customer_request.privacy_consent_version, "draft-2026-08-15")
+        self.assertEqual(customer_request.consent_source, "cart")
+        self.assertIsNotNone(customer_request.consent_accepted_at)
+
+    @override_settings(
+        ZEMAZAP_PRIVACY_POLICY_VERSION="policy-v2",
+        ZEMAZAP_PRIVACY_CONSENT_VERSION="consent-v2",
+    )
+    def test_request_api_captures_consent_metadata(self):
+        response = self.client.post(
+            "/api/requests/",
+            data={
+                "customerName": "Артём",
+                "contact": "+7 999 111-22-33",
+                "requestText": "Нужна фара",
+                "source": "request_form",
+                "privacyAccepted": True,
+                "consentSource": "request_form",
+            },
+            content_type="application/json",
+            HTTP_USER_AGENT="Zemazap test browser",
+            HTTP_X_FORWARDED_FOR="203.0.113.10",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        customer_request = CustomerRequest.objects.get()
+        self.assertEqual(customer_request.privacy_policy_version, "policy-v2")
+        self.assertEqual(customer_request.privacy_consent_version, "consent-v2")
+        self.assertEqual(customer_request.consent_source, "request_form")
+        self.assertEqual(customer_request.consent_ip, "203.0.113.10")
+        self.assertEqual(customer_request.consent_user_agent, "Zemazap test browser")
 
     def test_request_api_rejects_overlong_text(self):
         response = self.client.post(

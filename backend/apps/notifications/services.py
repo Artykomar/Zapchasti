@@ -12,13 +12,34 @@ from apps.leads.models import CustomerRequest
 logger = logging.getLogger(__name__)
 
 
-def build_request_notification_text(customer_request: CustomerRequest) -> str:
+def mask_contact(value: str) -> str:
+    digits = "".join(char for char in value if char.isdigit())
+    if len(digits) >= 4:
+        return f"***{digits[-4:]}"
+    return "***"
+
+
+def build_request_notification_text(customer_request: CustomerRequest, include_pii: bool = True) -> str:
     items = customer_request.items.all()
     item_lines = [
         f"- {item.part_name}{', арт. ' + item.article if item.article else ''}, {item.quantity} шт."
         for item in items
     ] or ["- подбор по описанию"]
     base_url = getattr(settings, "ZEMAZAP_SITE_URL", "http://127.0.0.1:3000").rstrip("/")
+    admin_url = f"{base_url}/admin/leads/customerrequest/{customer_request.id}/change/"
+    if not include_pii:
+        return "\n".join(
+            [
+                f"Новая заявка Zemazap #{customer_request.id}",
+                "",
+                f"Источник: {'корзина' if customer_request.source == 'cart' else 'форма подбора'}",
+                f"Контакт: {mask_contact(customer_request.contact)}",
+                f"Позиций: {items.count()}",
+                "",
+                f"Открыть в Django admin: {admin_url}",
+            ]
+        )
+
     return "\n".join(
         [
             "Новая заявка Zemazap",
@@ -33,7 +54,7 @@ def build_request_notification_text(customer_request: CustomerRequest) -> str:
             "Позиции:",
             *item_lines,
             "",
-            f"Открыть в Django admin: {base_url}/admin/leads/customerrequest/{customer_request.id}/change/",
+            f"Открыть в Django admin: {admin_url}",
         ]
     )
 
@@ -54,7 +75,13 @@ def notify_manager_about_request(customer_request: CustomerRequest) -> None:
 
     if token and chat_id:
         try:
-            payload = json.dumps({"chat_id": chat_id, "text": text, "disable_web_page_preview": True}).encode("utf-8")
+            telegram_text = build_request_notification_text(
+                customer_request,
+                include_pii=getattr(settings, "PII_IN_NOTIFICATIONS_ALLOWED", False),
+            )
+            payload = json.dumps(
+                {"chat_id": chat_id, "text": telegram_text, "disable_web_page_preview": True}
+            ).encode("utf-8")
             req = urllib_request.Request(
                 f"https://api.telegram.org/bot{token}/sendMessage",
                 data=payload,
