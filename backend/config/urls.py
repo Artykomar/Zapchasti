@@ -35,5 +35,7 @@ urlpatterns = [
     path("api/imports/prices", PriceImportAPIView.as_view(), name="price-import-no-slash"),
     path("api/catalog/", include("apps.catalog.urls")),
     path("api/requests/", include("apps.leads.urls")),
+    path("api/orders/", include("apps.orders.urls")),
+    path("api/payments/", include("apps.payments.urls")),
     path("api/imports/", include("apps.imports.urls")),
 ]

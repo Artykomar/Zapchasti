@@ -1,5 +1,7 @@
 from django.contrib import admin
 
+from apps.orders.services import create_order_from_request
+
 from .models import CustomerRequest, CustomerRequestEvent, CustomerRequestItem
 
 
@@ -28,5 +30,21 @@ class CustomerRequestAdmin(admin.ModelAdmin):
         "consent_user_agent",
     )
     inlines = [CustomerRequestItemInline, CustomerRequestEventInline]
+    actions = ["create_orders"]
+
+    @admin.action(description="Create draft order from selected requests")
+    def create_orders(self, request, queryset):
+        created = 0
+        skipped = 0
+        for customer_request in queryset:
+            _order, was_created = create_order_from_request(
+                customer_request,
+                note=f"Created from CustomerRequest admin action by {request.user}.",
+            )
+            if was_created:
+                created += 1
+            else:
+                skipped += 1
+        self.message_user(request, f"Created {created} order(s), skipped {skipped} existing order(s).")
 
 # Register your models here.

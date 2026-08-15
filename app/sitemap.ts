@@ -11,6 +11,8 @@ const routes = [
   "/contacts",
   "/about",
   "/reviews",
+  "/payment/success",
+  "/payment/fail",
   "/privacy-policy",
   "/personal-data-consent",
   "/terms"
