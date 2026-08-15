@@ -15,6 +15,16 @@ const envFlag = (name: string, fallback = false) => {
   return ["1", "true", "yes", "on"].includes(value.trim().toLowerCase());
 };
 
+const envNumber = (name: string, fallback: number) => {
+  const value = Number.parseFloat(process.env[name] || "");
+  return Number.isFinite(value) ? value : fallback;
+};
+
+const defaultAddress = "Москва, Лубянская площадь";
+const configuredAddress = process.env.ZEMAZAP_ADDRESS || defaultAddress;
+const mapAddress = process.env.ZEMAZAP_2GIS_MAP_ADDRESS || configuredAddress;
+const defaultTwoGisMapUrl = `https://2gis.ru/moscow/search/${encodeURIComponent(mapAddress)}`;
+
 export const siteConfig = {
   brandName: process.env.ZEMAZAP_BRAND_NAME || "Zemazap",
   tagline: process.env.ZEMAZAP_TAGLINE || "автозапчасти под заказ",
@@ -22,7 +32,13 @@ export const siteConfig = {
   indexingAllowed: envFlag("ZEMAZAP_INDEXING_ALLOWED", false),
   region: process.env.ZEMAZAP_REGION || "Регион работы уточняется",
   businessHours: process.env.ZEMAZAP_BUSINESS_HOURS || "Пн-Сб, график будет задан",
-  address: process.env.ZEMAZAP_ADDRESS || "",
+  address: configuredAddress,
+  mapAddress,
+  mapLatitude: envNumber("ZEMAZAP_2GIS_LATITUDE", 55.7596),
+  mapLongitude: envNumber("ZEMAZAP_2GIS_LONGITUDE", 37.6263),
+  mapZoom: envNumber("ZEMAZAP_2GIS_ZOOM", 15),
+  twoGisMapUrl: cleanUrl(process.env.ZEMAZAP_2GIS_MAP_URL, defaultTwoGisMapUrl),
+  twoGisMapglKey: process.env.NEXT_PUBLIC_2GIS_MAPGL_KEY || "",
   phoneLabel: process.env.ZEMAZAP_PUBLIC_PHONE_LABEL || "+7 (000) 000-00-00",
   phoneHref: process.env.ZEMAZAP_PUBLIC_PHONE_HREF || "+70000000000",
   publicEmail: process.env.ZEMAZAP_PUBLIC_EMAIL || "orders@example.ru",

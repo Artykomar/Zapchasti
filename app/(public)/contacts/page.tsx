@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { Clock, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
+import TwoGisMap from "@/src/components/TwoGisMap";
 import { hasPublicLegalEntity, siteConfig } from "@/src/server/siteConfig";
 
 export default function ContactsPage() {
   const legalReady = hasPublicLegalEntity();
+  const mapCenter: [number, number] = [siteConfig.mapLongitude, siteConfig.mapLatitude];
 
   return (
     <main className="page-shell">
@@ -63,9 +65,13 @@ export default function ContactsPage() {
         </Link>
       </section>
 
-      <section className="map-placeholder" aria-label="Карта">
-        <span>Карта будет подключена после выбора адреса</span>
-      </section>
+      <TwoGisMap
+        address={siteConfig.mapAddress}
+        apiKey={siteConfig.twoGisMapglKey}
+        center={mapCenter}
+        mapUrl={siteConfig.twoGisMapUrl}
+        zoom={siteConfig.mapZoom}
+      />
 
       <section className="legal-text">
         <h2>Реквизиты продавца</h2>
