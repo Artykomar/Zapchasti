@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: zemazap_ci
+          POSTGRES_USER: zemazap
+          POSTGRES_PASSWORD: ci-only-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U zemazap -d zemazap_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DJANGO_DEBUG: "true"
+      DJANGO_SECRET_KEY: ci-only-django-secret-not-for-production
+      DATABASE_URL: postgresql://zemazap:ci-only-password@127.0.0.1:5432/zemazap_ci
+      DATABASE_SSL_REQUIRE: "false"
+      ZEMAZAP_SITE_URL: http://127.0.0.1:3000
+      PAYMENTS_ENABLED: "false"
+      FISCALIZATION_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - run: python -m pip install -r backend/requirements.txt
+      - run: python backend/manage.py migrate --noinput
+      - run: python backend/manage.py check
+      - run: python backend/manage.py makemigrations --check --dry-run
+      - run: python backend/manage.py test apps.core apps.catalog apps.customers apps.leads apps.orders apps.payments apps.fiscal apps.refunds apps.imports apps.notifications
+      - name: Production launch checks
+        env:
+          DJANGO_DEBUG: "false"
+          DJANGO_ALLOWED_HOSTS: zemazap.example
+          DJANGO_CORS_ALLOWED_ORIGINS: https://zemazap.example
+          DJANGO_CSRF_TRUSTED_ORIGINS: https://zemazap.example
+          ZEMAZAP_SITE_URL: https://zemazap.example
+          ZEMAZAP_PUBLIC_PHONE_LABEL: +7 (900) 000-00-00
+          ZEMAZAP_PUBLIC_EMAIL: shop@zemazap.example
+          ZEMAZAP_SELLER_PROFILE: ooo
+          ZEMAZAP_LEGAL_NAME: ООО Земазап Тест
+          ZEMAZAP_LEGAL_INN: "7700000000"
+          ZEMAZAP_LEGAL_OGRN: "1000000000000"
+          ZEMAZAP_LEGAL_ADDRESS: Москва
+          ZEMAZAP_ACTUAL_ADDRESS: Москва
+          ZEMAZAP_CLAIMS_EMAIL: claims@zemazap.example
+          ZEMAZAP_PRIVACY_POLICY_VERSION: ci-v1
+          ZEMAZAP_PRIVACY_CONSENT_VERSION: ci-v1
+          STORAGE_BACKEND: yandex
+          YANDEX_OBJECT_STORAGE_BUCKET: zemazap-ci
+          YANDEX_OBJECT_STORAGE_ACCESS_KEY_ID: ci-access-key
+          YANDEX_OBJECT_STORAGE_SECRET_ACCESS_KEY: ci-secret-key
+        run: python backend/manage.py check --deploy
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm audit --omit=dev

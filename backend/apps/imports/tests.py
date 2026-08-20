@@ -36,6 +36,22 @@ class PriceImportCyrillicTests(TestCase):
         self.assertEqual(rows[0].brand, "Тойота")
         self.assertEqual(rows[0].category, "Бамперы")
 
+    def test_compliance_product_fields_are_imported(self):
+        content = (
+            "Название;Артикул;Состояние;Тип фото;Гарантия;Маркировка обязательна;Статус маркировки\n"
+            "Масло;OIL-1;новая;actual;12 месяцев;да;confirmed\n"
+        ).encode("utf-8")
+
+        rows = parse_price_import_file("price.csv", content)
+        price_import = import_price_rows("price.csv", "csv", rows)
+        part = Part.objects.get(primary_article="OIL-1")
+
+        self.assertEqual(price_import.imported_rows, 1)
+        self.assertEqual(part.photo_kind, Part.PhotoKind.ACTUAL)
+        self.assertEqual(part.warranty_terms, "12 месяцев")
+        self.assertTrue(part.marking_required)
+        self.assertEqual(part.marking_status, Part.MarkingStatus.CONFIRMED)
+
     def test_russian_brand_category_and_part_slugs_are_distinct(self):
         import_price_rows(
             "price.csv",

@@ -1,10 +1,15 @@
+from django.contrib import admin
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.core.management import call_command
+from django.test import RequestFactory
 from django.test import TestCase
 
 from apps.leads.models import CustomerRequest
 from apps.leads.serializers import CustomerRequestCreateSerializer
 
 from .models import Order
+from .admin import OrderAdmin
 from .services import create_order_from_request
 
 
@@ -58,3 +63,20 @@ class OrderWorkflowTests(TestCase):
         self.assertTrue(first_created)
         self.assertFalse(second_created)
         self.assertEqual(first_order, second_order)
+
+    def test_accountant_cannot_view_order_pii_but_manager_can(self):
+        call_command("bootstrap_roles", verbosity=0)
+        accountant = get_user_model().objects.create_user("accountant")
+        accountant.groups.add(Group.objects.get(name="accountant"))
+        manager = get_user_model().objects.create_user("manager")
+        manager.groups.add(Group.objects.get(name="manager"))
+        model_admin = OrderAdmin(Order, admin.site)
+        request = RequestFactory().get("/admin/orders/order/")
+
+        request.user = accountant
+        self.assertIn("contact", model_admin.get_exclude(request))
+        self.assertIn("masked_customer", model_admin.get_list_display(request))
+
+        request.user = manager
+        self.assertNotIn("contact", model_admin.get_exclude(request))
+        self.assertIn("customer_name", model_admin.get_list_display(request))

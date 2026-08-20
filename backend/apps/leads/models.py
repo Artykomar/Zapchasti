@@ -34,6 +34,7 @@ class CustomerRequest(models.Model):
     consent_ip = models.GenericIPAddressField(null=True, blank=True)
     consent_user_agent = models.CharField(max_length=300, blank=True)
     total_estimate_rub = models.PositiveIntegerField(default=0)
+    anonymized_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -41,6 +42,11 @@ class CustomerRequest(models.Model):
         ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["status", "created_at"]),
+        ]
+        permissions = [
+            ("view_request_pii", "Can view personal data in requests"),
+            ("export_request_pii", "Can export personal data from requests"),
+            ("anonymize_request_pii", "Can anonymize personal data in requests"),
         ]
 
     def __str__(self) -> str:

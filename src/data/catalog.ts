@@ -18,7 +18,7 @@ export type Category = {
   description: string;
 };
 
-export type PartCondition = "новая" | "контрактная" | "восстановленная";
+export type PartCondition = "новая" | "контрактная" | "восстановленная" | "б/у";
 
 export type Part = {
   id: string;
@@ -38,6 +38,12 @@ export type Part = {
   delivery: string;
   analogs: string[];
   condition: PartCondition;
+  photo_kind?: "illustrative" | "actual";
+  warranty_terms?: string;
+  return_terms?: string;
+  marking_required?: boolean;
+  marking_status?: "not_required" | "requires_review" | "confirmed" | "blocked";
+  marking_category?: string;
   quality: "оригинал" | "заводской аналог" | "проверенная контрактная";
   stock: string;
   description: string;

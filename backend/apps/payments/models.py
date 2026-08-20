@@ -12,6 +12,7 @@ class Payment(models.Model):
         SUCCEEDED = "succeeded", "succeeded"
         FAILED = "failed", "failed"
         CANCELLED = "cancelled", "cancelled"
+        PARTIALLY_REFUNDED = "partially_refunded", "partially refunded"
         REFUNDED = "refunded", "refunded"
 
     public_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
@@ -22,6 +23,7 @@ class Payment(models.Model):
     amount_rub = models.PositiveIntegerField(default=0)
     currency = models.CharField(max_length=3, default="RUB")
     bank_order_id = models.CharField(max_length=120, blank=True)
+    provider_order_number = models.CharField(max_length=120, blank=True)
     form_url = models.URLField(blank=True)
     idempotency_key = models.CharField(max_length=160, unique=True)
     failure_reason = models.TextField(blank=True)
@@ -35,6 +37,7 @@ class Payment(models.Model):
             models.Index(fields=["order", "status"]),
             models.Index(fields=["public_id"]),
         ]
+        permissions = [("view_payment_details", "Can view payment provider details")]
 
     def __str__(self) -> str:
         return f"Payment #{self.id} for order {self.order_id}"

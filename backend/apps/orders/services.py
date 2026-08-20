@@ -28,6 +28,9 @@ def create_order_from_request(customer_request: CustomerRequest, note: str = "")
     if request_items:
         for item in request_items:
             part = item.part
+            primary_offer = None
+            if part:
+                primary_offer = part.price_offers.filter(is_primary=True).first()
             OrderItem.objects.create(
                 order=order,
                 part=part,
@@ -43,6 +46,8 @@ def create_order_from_request(customer_request: CustomerRequest, note: str = "")
                 payment_subject=getattr(part, "payment_subject", "commodity") if part else "commodity",
                 payment_method=getattr(part, "payment_method", "full_payment") if part else "full_payment",
                 unit=getattr(part, "unit", "шт.") if part else "шт.",
+                delivery_snapshot=getattr(primary_offer, "delivery", "") if primary_offer else "",
+                warranty_snapshot=getattr(part, "warranty_terms", "") if part else "",
             )
     else:
         OrderItem.objects.create(
@@ -55,5 +60,11 @@ def create_order_from_request(customer_request: CustomerRequest, note: str = "")
         )
 
     order.recalculate_total()
+    delivery_terms = sorted({item.delivery_snapshot for item in order.items.all() if item.delivery_snapshot})
+    warranty_terms = sorted({item.warranty_snapshot for item in order.items.all() if item.warranty_snapshot})
+    if delivery_terms or warranty_terms:
+        order.delivery_terms = "; ".join(delivery_terms)[:240]
+        order.warranty_terms = "; ".join(warranty_terms)[:240]
+        order.save(update_fields=["delivery_terms", "warranty_terms", "updated_at"])
     OrderStatusHistory.objects.create(order=order, status=order.status, note="Order created from customer request.")
     return order, True

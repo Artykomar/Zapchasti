@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { MessageCircle, PackageSearch, ShieldCheck } from "lucide-react";
 import RequestForm from "@/src/components/RequestForm";
+import { siteConfig } from "@/src/server/siteConfig";
 
 export default function RequestPage() {
   return (
@@ -15,7 +16,7 @@ export default function RequestPage() {
       </section>
 
       <section className="request-layout">
-        <RequestForm />
+        <RequestForm maxUrl={siteConfig.maxUrl} />
 
         <aside className="request-aside">
           <ShieldCheck size={30} aria-hidden="true" />

@@ -1,4 +1,5 @@
 import CartContents from "@/src/components/CartContents";
+import { siteConfig } from "@/src/server/siteConfig";
 
 export default function CartPage() {
   return (
@@ -12,7 +13,7 @@ export default function CartPage() {
         </p>
       </section>
 
-      <CartContents />
+      <CartContents maxUrl={siteConfig.maxUrl} />
     </main>
   );
 }

@@ -39,3 +39,7 @@ urlpatterns = [
     path("api/payments/", include("apps.payments.urls")),
     path("api/imports/", include("apps.imports.urls")),
 ]
+
+admin.site.site_header = "Zemazap Admin"
+admin.site.site_title = "Zemazap Admin"
+admin.site.index_title = "Управление магазином"

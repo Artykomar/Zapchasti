@@ -14,6 +14,13 @@ class FiscalReceipt(models.Model):
 
     payment = models.ForeignKey("payments.Payment", on_delete=models.PROTECT, related_name="fiscal_receipts")
     order = models.ForeignKey("orders.Order", on_delete=models.PROTECT, related_name="fiscal_receipts")
+    refund = models.ForeignKey(
+        "refunds.Refund",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="fiscal_receipts",
+    )
     receipt_type = models.CharField(max_length=20, choices=ReceiptType.choices, default=ReceiptType.SALE)
     status = models.CharField(max_length=40, choices=Status.choices, default=Status.DRAFT)
     provider = models.CharField(max_length=40, default="mock")
@@ -31,6 +38,18 @@ class FiscalReceipt(models.Model):
         indexes = [
             models.Index(fields=["payment", "receipt_type"]),
             models.Index(fields=["status", "created_at"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["payment", "receipt_type"],
+                condition=models.Q(receipt_type="sale"),
+                name="unique_sale_receipt_per_payment",
+            ),
+            models.UniqueConstraint(
+                fields=["refund", "receipt_type"],
+                condition=models.Q(receipt_type="refund"),
+                name="unique_refund_receipt_per_refund",
+            ),
         ]
 
     def __str__(self) -> str:

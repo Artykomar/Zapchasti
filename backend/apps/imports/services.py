@@ -31,6 +31,13 @@ class PriceImportRow:
     availability: str = "уточнить"
     stock: str = "уточнить"
     delivery: str = "Срок и наличие подтверждает менеджер"
+    condition: str = "новая"
+    photo_kind: str = "illustrative"
+    warranty_terms: str = ""
+    return_terms: str = ""
+    marking_required: bool = False
+    marking_status: str = "not_required"
+    marking_category: str = ""
 
 
 COLUMN_ALIASES = {
@@ -63,8 +70,25 @@ COLUMN_ALIASES = {
     "срок": "delivery",
     "delivery": "delivery",
     "срок поставки": "delivery",
+    "состояние": "condition",
+    "condition": "condition",
+    "тип фото": "photo_kind",
+    "photo kind": "photo_kind",
+    "гарантия": "warranty_terms",
+    "warranty": "warranty_terms",
+    "условия возврата": "return_terms",
+    "return terms": "return_terms",
+    "маркировка обязательна": "marking_required",
+    "marking required": "marking_required",
+    "статус маркировки": "marking_status",
+    "marking status": "marking_status",
+    "категория маркировки": "marking_category",
+    "marking category": "marking_category",
 }
 AVAILABILITY_VALUES = {"в наличии", "1-3 дня", "под заказ", "уточнить"}
+CONDITION_VALUES = {choice for choice, _label in Part.Condition.choices}
+PHOTO_KIND_VALUES = {choice for choice, _label in Part.PhotoKind.choices}
+MARKING_STATUS_VALUES = {choice for choice, _label in Part.MarkingStatus.choices}
 CSV_ENCODINGS = ("utf-8-sig", "cp1251")
 
 
@@ -133,6 +157,17 @@ def parse_table(table: list[list[object]]) -> list[PriceImportRow]:
             elif key == "availability":
                 availability = str(value).strip().lower()
                 item[key] = availability if availability in AVAILABILITY_VALUES else "уточнить"
+            elif key == "condition":
+                condition = str(value).strip().lower()
+                item[key] = condition if condition in CONDITION_VALUES else Part.Condition.NEW
+            elif key == "photo_kind":
+                photo_kind = str(value).strip().lower()
+                item[key] = photo_kind if photo_kind in PHOTO_KIND_VALUES else Part.PhotoKind.ILLUSTRATIVE
+            elif key == "marking_status":
+                marking_status = str(value).strip().lower()
+                item[key] = marking_status if marking_status in MARKING_STATUS_VALUES else Part.MarkingStatus.REQUIRES_REVIEW
+            elif key == "marking_required":
+                item[key] = str(value).strip().lower() in {"1", "true", "yes", "да", "обязательно"}
             else:
                 item[key] = str(value).strip()
         if item.get("name") and item.get("article"):
@@ -198,7 +233,7 @@ def import_price_rows(filename: str, file_kind: str, rows: list[PriceImportRow])
             category=category.name,
             brand=brand.name,
             model=row.model,
-            condition=Part.Condition.NEW,
+            condition=row.condition,
             quality="заводской аналог",
             analogs=[],
             compatibility=[],
@@ -213,7 +248,13 @@ def import_price_rows(filename: str, file_kind: str, rows: list[PriceImportRow])
                 "brand": brand,
                 "model_name": row.model,
                 "manufacturer": manufacturer,
-                "condition": Part.Condition.NEW,
+                "condition": row.condition,
+                "photo_kind": row.photo_kind,
+                "warranty_terms": row.warranty_terms,
+                "return_terms": row.return_terms,
+                "marking_required": row.marking_required,
+                "marking_status": row.marking_status,
+                "marking_category": row.marking_category,
                 "quality": "заводской аналог",
                 "description": "Импортированная позиция. Описание, применимость и гарантию нужно уточнить.",
                 "primary_oem": oem,

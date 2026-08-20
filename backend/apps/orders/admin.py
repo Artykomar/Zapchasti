@@ -29,6 +29,26 @@ class OrderAdmin(admin.ModelAdmin):
     inlines = [OrderItemInline, OrderStatusHistoryInline, OrderCommentInline]
     actions = ["mark_confirmed"]
 
+    def get_list_display(self, request):
+        if request.user.has_perm("orders.view_order_pii") or request.user.is_superuser:
+            return super().get_list_display(request)
+        return ("id", "masked_customer", "status", "total_amount_rub", "currency", "created_at")
+
+    def get_search_fields(self, request):
+        if request.user.has_perm("orders.view_order_pii") or request.user.is_superuser:
+            return super().get_search_fields(request)
+        return ("=id", "token", "items__article", "items__part_name")
+
+    def get_exclude(self, request, obj=None):
+        excluded = list(super().get_exclude(request, obj) or [])
+        if not request.user.has_perm("orders.view_order_pii") and not request.user.is_superuser:
+            excluded.extend(["request", "customer_name", "contact", "vehicle", "manager_note"])
+        return excluded
+
+    @admin.display(description="customer")
+    def masked_customer(self, obj):
+        return f"Клиент заказа #{obj.pk}"
+
     @admin.action(description="Mark selected orders as confirmed by manager")
     def mark_confirmed(self, request, queryset):
         updated = 0

@@ -3,6 +3,7 @@ from django.core.cache import cache
 from django.test import TestCase, override_settings
 
 from .models import CustomerRequest
+from .services import anonymize_customer_request
 
 
 class CustomerRequestApiTests(TestCase):
@@ -148,5 +149,28 @@ class CustomerRequestApiTests(TestCase):
 
         self.assertTrue(all(response.status_code == 201 for response in responses[:10]))
         self.assertEqual(responses[-1].status_code, 429)
+
+    def test_request_personal_data_can_be_anonymized_idempotently(self):
+        customer_request = CustomerRequest.objects.create(
+            customer_name="Артём",
+            contact="+7 999 111-22-33",
+            vehicle="Skoda Octavia",
+            request_text="Нужна фара",
+            source=CustomerRequest.Source.REQUEST_FORM,
+            privacy_accepted=True,
+            consent_ip="203.0.113.10",
+            consent_user_agent="Test browser",
+        )
+
+        anonymize_customer_request(customer_request, reason="Test")
+        anonymize_customer_request(customer_request, reason="Duplicate")
+
+        customer_request.refresh_from_db()
+        self.assertEqual(customer_request.customer_name, "Удалено")
+        self.assertNotIn("999", customer_request.contact)
+        self.assertEqual(customer_request.vehicle, "")
+        self.assertEqual(customer_request.request_text, "")
+        self.assertIsNone(customer_request.consent_ip)
+        self.assertIsNotNone(customer_request.anonymized_at)
 
 # Create your tests here.

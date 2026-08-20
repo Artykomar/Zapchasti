@@ -17,7 +17,21 @@ export const metadata: Metadata = {
     url: siteConfig.siteUrl,
     siteName: siteConfig.brandName,
     locale: "ru_RU",
-    type: "website"
+    type: "website",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1536,
+        height: 1024,
+        alt: `${siteConfig.brandName}: мультибрендовые автозапчасти`
+      }
+    ]
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${siteConfig.brandName} | Мультибрендовые автозапчасти`,
+    description: "Каталог автозапчастей с подтверждением заказа менеджером.",
+    images: ["/og-image.png"]
   }
 };
 

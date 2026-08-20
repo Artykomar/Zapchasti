@@ -4,6 +4,7 @@ import { ArrowRight, CheckCircle2, PackageCheck, ShieldCheck, Truck } from "luci
 import ProductActions from "@/src/components/ProductActions";
 import { formatPrice, getProductPath } from "@/src/data/catalog";
 import { getPartBySlug, getSimilarParts } from "@/src/server/django/catalog";
+import { getCanonicalUrl, hasPublicLegalEntity, siteConfig } from "@/src/server/siteConfig";
 
 export const dynamic = "force-dynamic";
 
@@ -19,13 +20,20 @@ export async function generateMetadata({ params }: ProductPageProps) {
 
   if (!part) {
     return {
-      title: "Товар не найден | Zemazap"
+      title: "Товар не найден | Zemazap",
+      robots: { index: false, follow: false }
     };
   }
 
+  const title = `${part.name} | ${siteConfig.brandName}`;
+  const description = `${part.brand} ${part.model}: ${part.article}, ${part.condition}, ${part.availability}.`;
+  const url = getCanonicalUrl(`/product/${part.slug}`);
   return {
-    title: `${part.name} | Zemazap`,
-    description: `${part.brand} ${part.model}: ${part.article}, ${part.condition}, ${part.availability}.`
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: { title, description, url, type: "website", images: [] },
+    twitter: { card: "summary", title, description, images: [] }
   };
 }
 
@@ -38,9 +46,39 @@ export default async function ProductPage({ params }: ProductPageProps) {
   }
 
   const similarParts = await getSimilarParts(part, 4);
+  const productJsonLd = siteConfig.indexingAllowed && hasPublicLegalEntity()
+    ? {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        name: part.name,
+        sku: part.article,
+        mpn: part.oem,
+        brand: { "@type": "Brand", name: part.manufacturer },
+        description: part.description,
+        itemCondition: part.condition === "новая"
+          ? "https://schema.org/NewCondition"
+          : "https://schema.org/UsedCondition",
+        offers: {
+          "@type": "Offer",
+          url: getCanonicalUrl(`/product/${part.slug}`),
+          priceCurrency: "RUB",
+          price: part.price,
+          availability: part.availability === "в наличии"
+            ? "https://schema.org/InStock"
+            : "https://schema.org/PreOrder",
+          seller: { "@type": "Organization", name: siteConfig.legalName }
+        }
+      }
+    : null;
 
   return (
     <main className="page-shell">
+      {productJsonLd ? (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd).replace(/</g, "\\u003c") }}
+        />
+      ) : null}
       <section className="product-detail">
         <div className="product-detail__visual">
           <PackageCheck size={70} aria-hidden="true" />

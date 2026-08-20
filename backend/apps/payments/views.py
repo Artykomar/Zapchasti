@@ -1,3 +1,6 @@
+import secrets
+
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAdminUser
@@ -8,7 +11,7 @@ from apps.orders.models import Order
 
 from .models import Payment
 from .serializers import PaymentLinkSerializer
-from .services import apply_mock_payment_callback, create_payment_link_for_order
+from .services import apply_mock_payment_callback, create_payment_link_for_order, synchronize_payment_status
 
 
 class PaymentLinkCreateAPIView(APIView):
@@ -50,3 +53,39 @@ class MockPaymentCallbackAPIView(APIView):
             return Response({"error": "; ".join(exc.messages)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(PaymentLinkSerializer(payment).data)
+
+
+class PaymentStatusRefreshAPIView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def post(self, request):
+        public_id = request.data.get("publicId") or request.data.get("paymentId")
+        try:
+            payment = Payment.objects.get(public_id=public_id)
+            payment = synchronize_payment_status(payment)
+        except Payment.DoesNotExist:
+            return Response({"error": "Payment not found."}, status=status.HTTP_404_NOT_FOUND)
+        except (ValidationError, ValueError, TypeError) as exc:
+            message = "; ".join(exc.messages) if isinstance(exc, ValidationError) else str(exc)
+            return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(PaymentLinkSerializer(payment).data)
+
+
+class AlfaPaymentCallbackAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        configured_token = str(getattr(settings, "ALFA_BANK_CALLBACK_TOKEN", ""))
+        supplied_token = str(request.query_params.get("token", ""))
+        if not configured_token or not secrets.compare_digest(configured_token, supplied_token):
+            return Response({"error": "Invalid callback token."}, status=status.HTTP_403_FORBIDDEN)
+
+        bank_order_id = request.data.get("orderId") or request.data.get("mdOrder")
+        try:
+            payment = Payment.objects.get(bank_order_id=bank_order_id)
+            payment = synchronize_payment_status(payment)
+        except Payment.DoesNotExist:
+            return Response({"error": "Payment not found."}, status=status.HTTP_404_NOT_FOUND)
+        except ValidationError as exc:
+            return Response({"error": "; ".join(exc.messages)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status": payment.status})

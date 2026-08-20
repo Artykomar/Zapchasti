@@ -2,12 +2,17 @@ from __future__ import annotations
 
 import json
 import logging
+from datetime import timedelta
 from urllib import request as urllib_request
 
 from django.conf import settings
 from django.core.mail import send_mail
+from django.db import transaction
+from django.utils import timezone
 
 from apps.leads.models import CustomerRequest
+
+from .models import NotificationDelivery
 
 logger = logging.getLogger(__name__)
 
@@ -59,35 +64,109 @@ def build_request_notification_text(customer_request: CustomerRequest, include_p
     )
 
 
+def _delivery_for_request(customer_request: CustomerRequest, channel: str, recipient_hint: str) -> NotificationDelivery:
+    return NotificationDelivery.objects.create(
+        channel=channel,
+        template_code="new_customer_request",
+        object_type="leads.CustomerRequest",
+        object_id=customer_request.pk,
+        recipient_hint=recipient_hint,
+        safe_payload={"request_id": customer_request.pk, "source": customer_request.source},
+    )
+
+
+def _load_request(delivery: NotificationDelivery) -> CustomerRequest:
+    if delivery.object_type != "leads.CustomerRequest":
+        raise ValueError("Unsupported notification object type.")
+    return CustomerRequest.objects.get(pk=delivery.object_id)
+
+
+@transaction.atomic
+def deliver_notification(delivery: NotificationDelivery) -> NotificationDelivery:
+    delivery = NotificationDelivery.objects.select_for_update().get(pk=delivery.pk)
+    if delivery.status == NotificationDelivery.Status.SENT:
+        return delivery
+    delivery.attempt_count += 1
+    customer_request = _load_request(delivery)
+
+    try:
+        if delivery.channel == NotificationDelivery.Channel.EMAIL:
+            recipient = getattr(settings, "ZEMAZAP_MANAGER_EMAIL", "")
+            if not recipient:
+                delivery.status = NotificationDelivery.Status.SKIPPED
+            else:
+                text = build_request_notification_text(customer_request, include_pii=True)
+                send_mail(
+                    f"Новая заявка Zemazap #{customer_request.pk}",
+                    text,
+                    None,
+                    [recipient],
+                    fail_silently=False,
+                )
+                delivery.status = NotificationDelivery.Status.SENT
+        elif delivery.channel == NotificationDelivery.Channel.TELEGRAM:
+            token = getattr(settings, "ZEMAZAP_TELEGRAM_BOT_TOKEN", "")
+            chat_id = getattr(settings, "ZEMAZAP_TELEGRAM_CHAT_ID", "")
+            if not token or not chat_id:
+                delivery.status = NotificationDelivery.Status.SKIPPED
+            else:
+                text = build_request_notification_text(
+                    customer_request,
+                    include_pii=getattr(settings, "PII_IN_NOTIFICATIONS_ALLOWED", False),
+                )
+                payload = json.dumps(
+                    {"chat_id": chat_id, "text": text, "disable_web_page_preview": True}
+                ).encode("utf-8")
+                request = urllib_request.Request(
+                    f"https://api.telegram.org/bot{token}/sendMessage",
+                    data=payload,
+                    headers={"Content-Type": "application/json"},
+                    method="POST",
+                )
+                urllib_request.urlopen(request, timeout=10).read()
+                delivery.status = NotificationDelivery.Status.SENT
+        else:
+            delivery.status = NotificationDelivery.Status.SKIPPED
+    except Exception as exc:
+        delivery.status = NotificationDelivery.Status.FAILED
+        delivery.last_error_code = exc.__class__.__name__[:160]
+        delay_minutes = min(60, 2 ** min(delivery.attempt_count, 5))
+        delivery.next_attempt_at = timezone.now() + timedelta(minutes=delay_minutes)
+        logger.warning(
+            "Notification delivery failed",
+            extra={"delivery_id": delivery.pk, "channel": delivery.channel, "error_code": delivery.last_error_code},
+        )
+    else:
+        delivery.last_error_code = ""
+        delivery.next_attempt_at = None
+        if delivery.status == NotificationDelivery.Status.SENT:
+            delivery.sent_at = timezone.now()
+
+    delivery.save(
+        update_fields=[
+            "attempt_count",
+            "status",
+            "last_error_code",
+            "next_attempt_at",
+            "sent_at",
+            "updated_at",
+        ]
+    )
+    return delivery
+
+
 def notify_manager_about_request(customer_request: CustomerRequest) -> None:
-    text = build_request_notification_text(customer_request)
-    subject = f"Новая заявка Zemazap: {customer_request.customer_name}"
+    deliveries = []
     manager_email = getattr(settings, "ZEMAZAP_MANAGER_EMAIL", "")
-
     if manager_email:
-        try:
-            send_mail(subject, text, None, [manager_email], fail_silently=False)
-        except Exception:
-            logger.exception("Email manager notification failed")
-
-    token = getattr(settings, "ZEMAZAP_TELEGRAM_BOT_TOKEN", "")
-    chat_id = getattr(settings, "ZEMAZAP_TELEGRAM_CHAT_ID", "")
-
-    if token and chat_id:
-        try:
-            telegram_text = build_request_notification_text(
-                customer_request,
-                include_pii=getattr(settings, "PII_IN_NOTIFICATIONS_ALLOWED", False),
-            )
-            payload = json.dumps(
-                {"chat_id": chat_id, "text": telegram_text, "disable_web_page_preview": True}
-            ).encode("utf-8")
-            req = urllib_request.Request(
-                f"https://api.telegram.org/bot{token}/sendMessage",
-                data=payload,
-                headers={"Content-Type": "application/json"},
-                method="POST",
-            )
-            urllib_request.urlopen(req, timeout=10).read()
-        except Exception:
-            logger.exception("Telegram manager notification failed")
+        deliveries.append(
+            _delivery_for_request(customer_request, NotificationDelivery.Channel.EMAIL, "manager-email")
+        )
+    if getattr(settings, "ZEMAZAP_TELEGRAM_BOT_TOKEN", "") and getattr(
+        settings, "ZEMAZAP_TELEGRAM_CHAT_ID", ""
+    ):
+        deliveries.append(
+            _delivery_for_request(customer_request, NotificationDelivery.Channel.TELEGRAM, "manager-telegram")
+        )
+    for delivery in deliveries:
+        deliver_notification(delivery)

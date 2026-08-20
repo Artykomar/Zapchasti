@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import LegalEntitySettings, SiteSettings
+from .models import LegalDocument, LegalEntitySettings, RetentionPolicy, SiteSettings
 
 
 class SingletonAdminMixin:
@@ -28,3 +28,21 @@ class LegalEntitySettingsAdmin(SingletonAdminMixin, admin.ModelAdmin):
         ("Bank and taxes", {"fields": ("bank_name", "bank_account", "correspondent_account", "bik", "tax_mode", "vat_label")}),
     )
     list_display = ("public_name", "seller_profile", "inn", "tax_mode", "is_ready_for_production", "updated_at")
+
+
+@admin.register(LegalDocument)
+class LegalDocumentAdmin(admin.ModelAdmin):
+    list_display = ("title", "kind", "version", "is_published", "published_at", "updated_at")
+    list_filter = ("kind", "is_published", "published_at")
+    search_fields = ("title", "version", "body")
+
+
+@admin.register(RetentionPolicy)
+class RetentionPolicyAdmin(SingletonAdminMixin, admin.ModelAdmin):
+    list_display = (
+        "request_retention_days",
+        "cancelled_order_retention_days",
+        "notification_retention_days",
+        "audit_retention_days",
+        "updated_at",
+    )

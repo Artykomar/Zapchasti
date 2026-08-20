@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from django.conf import settings
 from django.db.utils import OperationalError, ProgrammingError
 
-from .models import LegalEntitySettings, SiteSettings
+from .models import LegalDocument, LegalEntitySettings, SiteSettings
 
 
 @dataclass(frozen=True)
@@ -94,6 +94,20 @@ def build_public_site_settings() -> dict:
     legal_settings = get_legal_entity_settings()
     feature_flags = get_launch_feature_flags()
 
+    published_documents = {}
+    try:
+        for document in LegalDocument.objects.filter(is_published=True).order_by("kind", "-published_at"):
+            published_documents.setdefault(
+                document.kind,
+                {
+                    "version": document.version,
+                    "title": document.title,
+                    "publishedAt": document.published_at.isoformat() if document.published_at else None,
+                },
+            )
+    except (OperationalError, ProgrammingError):
+        published_documents = {}
+
     return {
         "brand": {
             "name": site_settings.brand_name,
@@ -130,6 +144,7 @@ def build_public_site_settings() -> dict:
             "privacyConsentVersion": site_settings.privacy_consent_version,
             "termsVersion": site_settings.terms_version,
             "bankReviewMode": site_settings.bank_review_mode,
+            "published": published_documents,
         },
         "featureFlags": {
             "paymentsEnabled": feature_flags.payments_enabled,

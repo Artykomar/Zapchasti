@@ -13,6 +13,7 @@ class Customer(models.Model):
         indexes = [
             models.Index(fields=["normalized_contact"]),
         ]
+        permissions = [("view_customer_pii", "Can view customer personal data")]
 
     def __str__(self) -> str:
         return f"{self.display_name} ({self.contact})"

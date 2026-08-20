@@ -1,0 +1,16 @@
+.git
+.github
+.idea
+.next
+.venv
+backend/data
+backend/media
+backend/staticfiles
+node_modules
+output
+tmp
+*.log
+.env
+.env.*
+!.env.example
+!backend/.env.example

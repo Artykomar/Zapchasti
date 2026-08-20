@@ -38,7 +38,8 @@ export const siteConfig = {
   mapLongitude: envNumber("ZEMAZAP_2GIS_LONGITUDE", 37.6263),
   mapZoom: envNumber("ZEMAZAP_2GIS_ZOOM", 15),
   twoGisMapUrl: cleanUrl(process.env.ZEMAZAP_2GIS_MAP_URL, defaultTwoGisMapUrl),
-  twoGisMapglKey: process.env.NEXT_PUBLIC_2GIS_MAPGL_KEY || "",
+  twoGisMapglKey:
+    process.env.ZEMAZAP_2GIS_MAPGL_KEY || process.env.NEXT_PUBLIC_2GIS_MAPGL_KEY || "",
   phoneLabel: process.env.ZEMAZAP_PUBLIC_PHONE_LABEL || "+7 (000) 000-00-00",
   phoneHref: process.env.ZEMAZAP_PUBLIC_PHONE_HREF || "+70000000000",
   publicEmail: process.env.ZEMAZAP_PUBLIC_EMAIL || "orders@example.ru",

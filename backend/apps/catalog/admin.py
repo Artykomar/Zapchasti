@@ -8,6 +8,7 @@ from .models import (
     ModelGeneration,
     Part,
     PartCompatibility,
+    PartDocument,
     PartNumber,
     PartSpec,
     PriceOffer,
@@ -74,12 +75,27 @@ class PriceOfferInline(admin.TabularInline):
     extra = 0
 
 
+class PartDocumentInline(admin.TabularInline):
+    model = PartDocument
+    extra = 0
+
+
 @admin.register(Part)
 class PartAdmin(admin.ModelAdmin):
-    list_display = ("name", "legacy_id", "brand", "category", "manufacturer", "primary_article", "is_active")
-    list_filter = ("is_active", "brand", "category", "condition")
+    list_display = (
+        "name",
+        "legacy_id",
+        "brand",
+        "category",
+        "condition",
+        "marking_status",
+        "sale_blocked_by_marking",
+        "primary_article",
+        "is_active",
+    )
+    list_filter = ("is_active", "brand", "category", "condition", "photo_kind", "marking_required", "marking_status")
     search_fields = ("name", "legacy_id", "primary_oem", "primary_article", "search_text")
     prepopulated_fields = {"slug": ("name",)}
-    inlines = [PartNumberInline, PartCompatibilityInline, PartSpecInline, PriceOfferInline]
+    inlines = [PartNumberInline, PartCompatibilityInline, PartSpecInline, PartDocumentInline, PriceOfferInline]
 
 # Register your models here.

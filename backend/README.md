@@ -1,63 +1,44 @@
 # Zemazap Django backend
 
-This folder is the Django migration target for the Zemazap backend. The old
-Django migration branch has become the active project state: Next.js is now the
-public frontend and Django is the only backend/admin surface.
+Django/DRF — единственный backend и административный контур проекта. Next.js
+обращается к нему через `ZEMAZAP_DJANGO_API_URL` (по умолчанию
+`http://127.0.0.1:8000`).
 
-## Local setup
+## Локальная настройка
+
+Из корня репозитория:
 
 ```powershell
-cd C:\Users\Arsik\Documents\ChatGPT\Сайт\Zapchasti
 .\.venv\Scripts\python.exe -m pip install -r backend\requirements.txt
 .\.venv\Scripts\python.exe backend\manage.py migrate
 .\.venv\Scripts\python.exe backend\manage.py seed_demo
+.\.venv\Scripts\python.exe backend\manage.py bootstrap_roles
 .\.venv\Scripts\python.exe backend\manage.py runserver 127.0.0.1:8000
 ```
 
-The Next.js frontend proxies public `/api/catalog`, `/api/catalog/<slug>` and
-`/api/requests` calls to this Django server through `ZEMAZAP_DJANGO_API_URL`
-(default `http://127.0.0.1:8000`).
+Локально используется SQLite (`backend/data/zemazap_django.sqlite3`), production
+подключается к PostgreSQL через `DATABASE_URL`. Media может храниться локально
+или в Yandex Object Storage через S3-compatible настройки.
 
-## Current API scaffold
+## Основные API
 
-- `GET /api/health/`
-- `GET /api/catalog/`
-- `GET /api/catalog/<slug>/`
-- `POST /api/requests/`
-- `POST /api/imports/prices/` for authenticated staff users
+- `GET /api/health/` — проверка приложения и БД.
+- `GET /api/catalog/`, `GET /api/catalog/<slug>/` — публичный каталог.
+- `POST /api/requests/` — заявки клиентов.
+- `GET /api/orders/<token>/` — безопасная публичная карточка заказа.
+- `/api/payments/...` — staff payment link, mock/test callbacks и защищенный
+  callback Альфа-Банка с server-to-server сверкой.
+- `POST /api/imports/prices/` — импорт прайса для staff.
 
-The public catalog and request endpoints also support the no-trailing-slash
-forms used by the current frontend: `/api/catalog`, `/api/catalog/<slug>` and
-`/api/requests`.
-
-## Database plan
-
-Local development uses SQLite by default:
-
-`backend/data/zemazap_django.sqlite3`
-
-Production should use PostgreSQL via `DATABASE_URL`.
-
-For production, set `DJANGO_DEBUG=false`, a strong `DJANGO_SECRET_KEY`,
-`DJANGO_ALLOWED_HOSTS`, `DJANGO_CORS_ALLOWED_ORIGINS` and
-`DJANGO_CSRF_TRUSTED_ORIGINS`. Secure cookies, HTTPS redirect and HSTS are
-enabled by default outside development, and DRF Browsable API is disabled.
-
-## PyCharm
-
-Open the repository root `C:\Users\Arsik\Documents\ChatGPT\Сайт\Zapchasti` in PyCharm. The
-project includes Git metadata and a Django run configuration. On a fresh clone,
-create `.venv`, install `backend\requirements.txt`, run migrations and seed the
-demo catalog.
-
-Useful commands from the PyCharm terminal:
+## Эксплуатационные команды
 
 ```powershell
-git status -sb
-git pull --ff-only origin main
-.\.venv\Scripts\python.exe backend\manage.py check
-.\.venv\Scripts\python.exe backend\manage.py test apps.catalog apps.leads apps.imports apps.notifications
-git add .gitignore .idea backend
-git commit -m "Describe the backend change"
-git push origin main
+.\.venv\Scripts\python.exe backend\manage.py reconcile_pending_payments
+.\.venv\Scripts\python.exe backend\manage.py retry_failed_receipts
+.\.venv\Scripts\python.exe backend\manage.py retry_notifications
+.\.venv\Scripts\python.exe backend\manage.py anonymize_personal_data --dry-run
 ```
+
+Production требует `DJANGO_DEBUG=false`, сильный `DJANGO_SECRET_KEY`, HTTPS,
+реальные hosts/origins, legal settings, PostgreSQL и внешние секреты. Проверка
+контракта выполняется через `manage.py check --deploy`.

@@ -98,6 +98,17 @@ class Part(TimeStampedModel):
         NEW = "новая", "новая"
         CONTRACT = "контрактная", "контрактная"
         RESTORED = "восстановленная", "восстановленная"
+        USED = "б/у", "б/у"
+
+    class PhotoKind(models.TextChoices):
+        ILLUSTRATIVE = "illustrative", "иллюстративное"
+        ACTUAL = "actual", "реальное фото товара"
+
+    class MarkingStatus(models.TextChoices):
+        NOT_REQUIRED = "not_required", "не требуется"
+        REQUIRES_REVIEW = "requires_review", "нужна проверка"
+        CONFIRMED = "confirmed", "процесс подтвержден"
+        BLOCKED = "blocked", "продажа заблокирована"
 
     legacy_id = models.CharField(max_length=160, unique=True, blank=True, null=True)
     slug = models.SlugField(max_length=160, unique=True)
@@ -107,6 +118,16 @@ class Part(TimeStampedModel):
     model_name = models.CharField(max_length=160, blank=True)
     manufacturer = models.ForeignKey(Manufacturer, on_delete=models.PROTECT, related_name="parts")
     condition = models.CharField(max_length=40, choices=Condition.choices, default=Condition.NEW)
+    photo_kind = models.CharField(max_length=20, choices=PhotoKind.choices, default=PhotoKind.ILLUSTRATIVE)
+    warranty_terms = models.CharField(max_length=240, blank=True)
+    return_terms = models.CharField(max_length=240, blank=True)
+    marking_required = models.BooleanField(default=False)
+    marking_status = models.CharField(
+        max_length=30,
+        choices=MarkingStatus.choices,
+        default=MarkingStatus.NOT_REQUIRED,
+    )
+    marking_category = models.CharField(max_length=120, blank=True)
     quality = models.CharField(max_length=120, blank=True)
     description = models.TextField(blank=True)
     fiscal_name = models.CharField(max_length=128, blank=True)
@@ -130,6 +151,31 @@ class Part(TimeStampedModel):
 
     def __str__(self) -> str:
         return self.name
+
+    @property
+    def sale_blocked_by_marking(self) -> bool:
+        return self.marking_required and self.marking_status != self.MarkingStatus.CONFIRMED
+
+
+class PartDocument(models.Model):
+    class Kind(models.TextChoices):
+        CERTIFICATE = "certificate", "сертификат"
+        DECLARATION = "declaration", "декларация"
+        WARRANTY = "warranty", "гарантийный документ"
+        INSTRUCTION = "instruction", "инструкция"
+
+    part = models.ForeignKey(Part, on_delete=models.CASCADE, related_name="documents")
+    kind = models.CharField(max_length=30, choices=Kind.choices)
+    title = models.CharField(max_length=240)
+    file = models.FileField(upload_to="part-documents/%Y/%m/")
+    is_public = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["kind", "title"]
+
+    def __str__(self) -> str:
+        return self.title
 
 
 class PartNumber(models.Model):

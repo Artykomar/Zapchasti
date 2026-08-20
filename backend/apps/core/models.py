@@ -88,3 +88,47 @@ class LegalEntitySettings(SingletonModel):
     @property
     def public_name(self) -> str:
         return self.display_name or self.legal_name or "Реквизиты продавца не заполнены"
+
+
+class LegalDocument(models.Model):
+    class Kind(models.TextChoices):
+        PRIVACY_POLICY = "privacy_policy", "Политика персональных данных"
+        PRIVACY_CONSENT = "privacy_consent", "Согласие на обработку ПДн"
+        TERMS = "terms", "Условия заказа"
+        DELIVERY = "delivery", "Доставка"
+        PAYMENT = "payment", "Оплата"
+        WARRANTY = "warranty", "Гарантия"
+        RETURNS = "returns", "Возврат"
+
+    kind = models.CharField(max_length=40, choices=Kind.choices)
+    version = models.CharField(max_length=80)
+    title = models.CharField(max_length=240)
+    body = models.TextField()
+    published_at = models.DateTimeField(null=True, blank=True)
+    is_published = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["kind", "-published_at", "-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["kind", "version"], name="unique_legal_document_version")
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.get_kind_display()} — {self.version}"
+
+
+class RetentionPolicy(SingletonModel):
+    request_retention_days = models.PositiveIntegerField(default=1095)
+    cancelled_order_retention_days = models.PositiveIntegerField(default=1095)
+    notification_retention_days = models.PositiveIntegerField(default=365)
+    audit_retention_days = models.PositiveIntegerField(default=1095)
+    anonymize_test_data_after_days = models.PositiveIntegerField(default=30)
+
+    class Meta:
+        verbose_name = "retention policy"
+        verbose_name_plural = "retention policy"
+
+    def __str__(self) -> str:
+        return "Политика хранения данных"

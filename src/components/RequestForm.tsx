@@ -24,7 +24,7 @@ const initialSubmitState: SubmitState = { status: "idle" };
 const stripNumbers = (value: string) => value.replace(/\p{N}/gu, "");
 const keepDigitsOnly = (value: string) => value.replace(/\D/g, "");
 
-export default function RequestForm() {
+export default function RequestForm({ maxUrl = "" }: { maxUrl?: string }) {
   const [customerName, setCustomerName] = useState("");
   const [contact, setContact] = useState("");
   const [vehicle, setVehicle] = useState("");
@@ -143,7 +143,10 @@ export default function RequestForm() {
         {submitState.status === "sending" ? "Сохраняем" : "Отправить заявку"}
       </button>
       {submitState.status === "success" ? (
-        <p className="form-note">Заявка сохранена в базе: {submitState.requestId}</p>
+        <p className="form-note">
+          Заявка сохранена в базе: {submitState.requestId}
+          {maxUrl ? <>. <a href={maxUrl}>Написать в MAX</a></> : null}
+        </p>
       ) : null}
       {submitState.status === "error" ? <p className="form-note form-note--error">{submitState.message}</p> : null}
     </form>

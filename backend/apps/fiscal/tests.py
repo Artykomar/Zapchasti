@@ -71,3 +71,26 @@ class FiscalReceiptTests(TestCase):
         order.refresh_from_db()
         self.assertEqual(order.status, Order.Status.PAID)
         self.assertEqual(FiscalReceipt.objects.filter(payment=payment).count(), 1)
+
+    @override_settings(FISCALIZATION_ENABLED=True, FISCAL_PROVIDER="mock")
+    def test_successful_refund_creates_refund_receipt(self):
+        from apps.refunds.services import create_refund, process_refund
+
+        order = self.create_confirmed_order()
+        payment = Payment.objects.create(
+            order=order,
+            provider="mock",
+            mode="test",
+            status=Payment.Status.SUCCEEDED,
+            amount_rub=order.total_amount_rub,
+            currency=order.currency,
+            bank_order_id="mock-refund-payment",
+            idempotency_key="fiscal-refund-payment",
+        )
+
+        refund = process_refund(create_refund(payment, 10_000, "Частичный возврат"))
+
+        receipt = FiscalReceipt.objects.get(refund=refund)
+        self.assertEqual(receipt.receipt_type, FiscalReceipt.ReceiptType.REFUND)
+        self.assertEqual(receipt.status, FiscalReceipt.Status.VALIDATED)
+        self.assertEqual(receipt.amount_rub, 10_000)

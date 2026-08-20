@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { CreditCard, PackageCheck, ShieldCheck } from "lucide-react";
 import { formatPrice } from "@/src/data/catalog";
 import { getOrderByToken } from "@/src/server/django/orders";
+import { siteConfig } from "@/src/server/siteConfig";
 
 export const dynamic = "force-dynamic";
 
@@ -18,13 +19,19 @@ export async function generateMetadata({ params }: OrderPageProps) {
 
   if (!order) {
     return {
-      title: "Заказ не найден | Zemazap"
+      title: `Заказ не найден | ${siteConfig.brandName}`,
+      robots: { index: false, follow: false }
     };
   }
 
+  const title = `Заказ ${order.token} | ${siteConfig.brandName}`;
+  const description = "Подтвержденный заказ с составом, суммой и защищенной платежной ссылкой.";
   return {
-    title: `Заказ ${order.token} | Zemazap`,
-    description: "Подтвержденный заказ Zemazap с составом, суммой и тестовой платежной ссылкой."
+    title,
+    description,
+    robots: { index: false, follow: false },
+    openGraph: { title, description, images: [] },
+    twitter: { card: "summary", title, description, images: [] }
   };
 }
 

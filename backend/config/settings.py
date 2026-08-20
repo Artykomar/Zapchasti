@@ -67,20 +67,26 @@ INSTALLED_APPS = [
     "apps.orders",
     "apps.payments",
     "apps.fiscal",
+    "apps.refunds",
     "apps.imports",
     "apps.notifications",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "apps.core.middleware.AdminLoginRateLimitMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+ADMIN_LOGIN_RATE_LIMIT = env_int("ADMIN_LOGIN_RATE_LIMIT", 10)
+ADMIN_LOGIN_LOCKOUT_SECONDS = env_int("ADMIN_LOGIN_LOCKOUT_SECONDS", 900)
 
 ROOT_URLCONF = "config.urls"
 
@@ -108,7 +114,11 @@ DATA_DIR.mkdir(exist_ok=True)
 
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DATA_DIR / 'zemazap_django.sqlite3'}")
 DATABASES = {
-    "default": dj_database_url.parse(DATABASE_URL, conn_max_age=60, ssl_require=False)
+    "default": dj_database_url.parse(
+        DATABASE_URL,
+        conn_max_age=env_int("DATABASE_CONN_MAX_AGE", 60),
+        ssl_require=env_bool("DATABASE_SSL_REQUIRE", False),
+    )
 }
 
 
@@ -142,6 +152,26 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+STORAGE_BACKEND = os.getenv("STORAGE_BACKEND", "local").strip().lower()
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+}
+if STORAGE_BACKEND == "yandex":
+    STORAGES["default"] = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            "endpoint_url": os.getenv("YANDEX_OBJECT_STORAGE_ENDPOINT", "https://storage.yandexcloud.net"),
+            "bucket_name": os.getenv("YANDEX_OBJECT_STORAGE_BUCKET", ""),
+            "region_name": os.getenv("YANDEX_OBJECT_STORAGE_REGION", "ru-central1"),
+            "access_key": os.getenv("YANDEX_OBJECT_STORAGE_ACCESS_KEY_ID", ""),
+            "secret_key": os.getenv("YANDEX_OBJECT_STORAGE_SECRET_ACCESS_KEY", ""),
+            "default_acl": None,
+            "querystring_auth": env_bool("YANDEX_OBJECT_STORAGE_PRIVATE", True),
+            "file_overwrite": False,
+        },
+    }
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 DATA_UPLOAD_MAX_MEMORY_SIZE = env_int("DJANGO_DATA_UPLOAD_MAX_MEMORY_SIZE", 512 * 1024)
@@ -189,6 +219,8 @@ PAYMENTS_ENABLED = env_bool("PAYMENTS_ENABLED", False)
 PAYMENTS_PROVIDER = os.getenv("PAYMENTS_PROVIDER", "alfa").strip().lower()
 PAYMENTS_MODE = os.getenv("PAYMENTS_MODE", "test").strip().lower()
 FISCALIZATION_ENABLED = env_bool("FISCALIZATION_ENABLED", False)
+FISCAL_PROVIDER = os.getenv("FISCAL_PROVIDER", "mock").strip().lower()
+FISCAL_TAX_SYSTEM = os.getenv("FISCAL_TAX_SYSTEM", "").strip()
 MAX_ENABLED = env_bool("MAX_ENABLED", False)
 PII_IN_NOTIFICATIONS_ALLOWED = env_bool("PII_IN_NOTIFICATIONS_ALLOWED", False)
 ANALYTICS_ENABLED = env_bool("ANALYTICS_ENABLED", False)
@@ -196,6 +228,9 @@ ANALYTICS_ENABLED = env_bool("ANALYTICS_ENABLED", False)
 ALFA_BANK_GATEWAY_URL = os.getenv("ALFA_BANK_GATEWAY_URL", "")
 ALFA_BANK_USERNAME = os.getenv("ALFA_BANK_USERNAME", "")
 ALFA_BANK_PASSWORD = os.getenv("ALFA_BANK_PASSWORD", "")
+ALFA_BANK_TOKEN = os.getenv("ALFA_BANK_TOKEN", "")
+ALFA_BANK_CALLBACK_TOKEN = os.getenv("ALFA_BANK_CALLBACK_TOKEN", "")
+ALFA_BANK_TIMEOUT_SECONDS = env_int("ALFA_BANK_TIMEOUT_SECONDS", 15)
 
 YANDEX_OBJECT_STORAGE_ENDPOINT = os.getenv("YANDEX_OBJECT_STORAGE_ENDPOINT", "")
 YANDEX_OBJECT_STORAGE_BUCKET = os.getenv("YANDEX_OBJECT_STORAGE_BUCKET", "")
@@ -206,6 +241,27 @@ YANDEX_OBJECT_STORAGE_SECRET_ACCESS_KEY = os.getenv("YANDEX_OBJECT_STORAGE_SECRE
 ZEMAZAP_MANAGER_EMAIL = os.getenv("ZEMAZAP_MANAGER_EMAIL", "")
 ZEMAZAP_TELEGRAM_CHAT_ID = os.getenv("ZEMAZAP_TELEGRAM_CHAT_ID", "")
 ZEMAZAP_TELEGRAM_BOT_TOKEN = os.getenv("ZEMAZAP_TELEGRAM_BOT_TOKEN", "")
+
+DJANGO_STRUCTURED_LOGGING = env_bool("DJANGO_STRUCTURED_LOGGING", not DEBUG)
+if DJANGO_STRUCTURED_LOGGING:
+    LOGGING = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "filters": {"redact_sensitive": {"()": "apps.core.logging.SensitiveDataFilter"}},
+        "formatters": {"json": {"()": "apps.core.logging.JsonFormatter"}},
+        "handlers": {
+            "console": {
+                "class": "logging.StreamHandler",
+                "filters": ["redact_sensitive"],
+                "formatter": "json",
+            }
+        },
+        "root": {"handlers": ["console"], "level": os.getenv("DJANGO_LOG_LEVEL", "INFO")},
+        "loggers": {
+            "django.server": {"handlers": ["console"], "level": "INFO", "propagate": False},
+            "django.request": {"handlers": ["console"], "level": "WARNING", "propagate": False},
+        },
+    }
 
 EMAIL_HOST = os.getenv("ZEMAZAP_SMTP_HOST", "")
 EMAIL_PORT = int(os.getenv("ZEMAZAP_SMTP_PORT", "465"))

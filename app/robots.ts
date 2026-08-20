@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
 import { getCanonicalUrl, siteConfig } from "@/src/server/siteConfig";
 
+export const dynamic = "force-dynamic";
+
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: siteConfig.indexingAllowed

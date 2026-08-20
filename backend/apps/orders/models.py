@@ -46,13 +46,18 @@ class Order(models.Model):
             models.Index(fields=["status", "created_at"]),
             models.Index(fields=["token"]),
         ]
+        permissions = [("view_order_pii", "Can view personal data in orders")]
 
     def __str__(self) -> str:
         return f"Order #{self.id} - {self.status}"
 
     @property
     def can_create_payment(self) -> bool:
-        return self.status in {self.Status.CONFIRMED_BY_MANAGER, self.Status.PAYMENT_PENDING}
+        return self.status in {
+            self.Status.CONFIRMED_BY_MANAGER,
+            self.Status.PAYMENT_PENDING,
+            self.Status.FAILED,
+        }
 
     def recalculate_total(self, save: bool = True) -> int:
         total = sum(item.line_total_rub for item in self.items.all())

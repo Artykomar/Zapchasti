@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { Clock, Heart, MapPin, MessageCircle, Phone } from "lucide-react";
 import HeaderCartLink from "@/src/components/HeaderCartLink";
-import { siteConfig } from "@/src/server/siteConfig";
+import { hasPublicLegalEntity, siteConfig } from "@/src/server/siteConfig";
+
+// Public contacts, legal details and feature flags are injected at container runtime.
+// Rendering this segment per request prevents Docker build-time placeholders from
+// being frozen into otherwise static pages.
+export const dynamic = "force-dynamic";
 
 const navItems = [
   { href: "/catalog", label: "Каталог" },
@@ -16,8 +21,29 @@ export default function PublicLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const organizationJsonLd = hasPublicLegalEntity()
+    ? {
+        "@context": "https://schema.org",
+        "@type": "AutoPartsStore",
+        name: siteConfig.legalName,
+        url: siteConfig.siteUrl,
+        telephone: siteConfig.phoneLabel,
+        email: siteConfig.publicEmail,
+        address: siteConfig.actualAddress || siteConfig.address,
+        taxID: siteConfig.legalInn
+      }
+    : null;
+
   return (
     <>
+      {organizationJsonLd ? (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationJsonLd).replace(/</g, "\\u003c")
+          }}
+        />
+      ) : null}
       <header className="site-header">
         <div className="topline">
           <div className="topline__item">
@@ -36,6 +62,12 @@ export default function PublicLayout({
             <MessageCircle size={16} aria-hidden="true" />
             <span>Подбор по артикулу</span>
           </a>
+          {siteConfig.maxUrl ? (
+            <a className="topline__item" href={siteConfig.maxUrl}>
+              <MessageCircle size={16} aria-hidden="true" />
+              <span>MAX</span>
+            </a>
+          ) : null}
         </div>
 
         <div className="mainnav">
@@ -79,6 +111,7 @@ export default function PublicLayout({
           <Link href="/privacy-policy">Политика ПДн</Link>
           <Link href="/personal-data-consent">Согласие ПДн</Link>
           <Link href="/contacts">Контакты</Link>
+          {siteConfig.maxUrl ? <a href={siteConfig.maxUrl}>MAX</a> : null}
         </div>
       </footer>
     </>
