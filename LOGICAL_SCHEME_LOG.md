@@ -150,3 +150,23 @@ B:[operations rehearsal]>[scheduler once|retention dry-run|external delivery dis
 B:[pg_dump]>D:[custom-format backup]>B:[pg_restore]>D:[verified 12 parts+5 roles]
 !:[no Docker, no Windows service, no production credentials/data]
 ```
+
+## 7. `zemazap_ceo_handoff_2026_08_23`
+
+```text
+R:[CEO]>D:[verified company/contact/catalogue inputs + approved legal decisions]
+R:[Lawyer+Accountant]>D:[7 approved documents + tax/VAT/KKT decisions]
+R:[CEO AI agent]>[collect without inventing]>D:[sanitized input/status register]
+D:[approved inputs]>B:[Django Admin staging content + real catalogue import]
+R:[Cloud owner]>X:[domain + Yandex staging/production + Lockbox]
+R:[Bank/KKT owners]>X:[Alfa test/prod + KKT/OFD confirmation]
+
+B:[candidate SHA]>[CI + release gate + staging smoke]
+X:[providers]>[payment/refund/receipt evidence]
+D:[backup]>B:[restore + rollback rehearsal]
+?{all P0 and evidence complete}>R:[CEO GO/NO-GO]
+?{GO for exact SHA}>B:[production deploy + smoke]
+?{production smoke passed}>[enable live integrations; later open indexing]
+!:[AI agent cannot approve legal/accounting facts or authorize launch]
+!:[secrets/PII/dumps stay out of Git, chat, screenshots and logs]
+```

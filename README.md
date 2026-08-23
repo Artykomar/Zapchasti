@@ -54,6 +54,11 @@ npm.cmd run e2e
 
 ## Production
 
+- Передача владельцу начинается с
+  [русского мастер-плана CEO](docs/ceo-launch-master-plan-ru.md). Для выполнения
+  через отдельного AI-агента подготовлен
+  [исполнительный TODO](docs/ceo-ai-agent-todo.md); агент не должен придумывать
+  реквизиты, утверждать юридические решения или включать реальные деньги.
 - `.env.example` и `backend/.env.example` описывают контракт переменных.
 - `compose.production.yml` остается вариантом удаленного production-like rollout:
   Caddy, Next.js, Django, scheduler и PostgreSQL. Для локальной работы он не нужен.
