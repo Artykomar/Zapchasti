@@ -44,6 +44,16 @@ def validate_refund_items(refund: Refund) -> None:
             raise ValidationError("Refund item amount must be positive.")
 
 
+def _validate_provider_payment_status(payment: Payment, provider_status) -> None:
+    expected_minor = payment.amount_rub * 100
+    if provider_status.order_number and provider_status.order_number != payment.provider_order_number:
+        raise PaymentProviderError("Alfa-Bank orderNumber does not match the internal payment.")
+    if provider_status.amount_minor is not None and provider_status.amount_minor != expected_minor:
+        raise PaymentProviderError("Alfa-Bank payment amount does not match the internal payment.")
+    if provider_status.currency and provider_status.currency not in {"643", "RUB"}:
+        raise PaymentProviderError("Alfa-Bank payment currency does not match RUB.")
+
+
 @transaction.atomic
 def create_refund(payment: Payment, amount_rub: int, reason: str, *, requested_by: str = "") -> Refund:
     payment = Payment.objects.select_for_update().select_related("order").get(pk=payment.pk)
@@ -66,17 +76,24 @@ def process_refund(refund: Refund) -> Refund:
         refund = Refund.objects.select_for_update().select_related("payment", "order").get(pk=refund.pk)
         if refund.status == Refund.Status.SUCCEEDED:
             return refund
-        if refund.status not in {Refund.Status.REQUESTED, Refund.Status.APPROVED, Refund.Status.FAILED}:
+        if refund.status not in {
+            Refund.Status.REQUESTED,
+            Refund.Status.APPROVED,
+            Refund.Status.PROCESSING,
+            Refund.Status.FAILED,
+        }:
             raise ValidationError("Refund is not in a processable status.")
+        is_recovery = refund.status in {Refund.Status.PROCESSING, Refund.Status.FAILED}
         if refund.payment.order_id != refund.order_id:
             raise ValidationError("Refund payment belongs to a different order.")
 
         payment = Payment.objects.select_for_update().get(pk=refund.payment_id)
         validate_refund_amount(payment, refund.amount_rub, exclude_refund_id=refund.pk)
         validate_refund_items(refund)
-        refund.status = Refund.Status.PROCESSING
-        refund.save(update_fields=["status", "updated_at"])
-        RefundEvent.objects.create(refund=refund, event_type="refund_processing")
+        if refund.status != Refund.Status.PROCESSING:
+            refund.status = Refund.Status.PROCESSING
+            refund.save(update_fields=["status", "updated_at"])
+            RefundEvent.objects.create(refund=refund, event_type="refund_processing")
 
     provider_payload = {}
     provider_reference = ""
@@ -84,7 +101,28 @@ def process_refund(refund: Refund) -> Refund:
         if payment.mode == "test" or payment.provider == "mock":
             provider_reference = f"mock-refund-{refund.public_id}"
         elif payment.provider == "alfa":
-            provider_payload = AlfaBankClient().refund(payment.bank_order_id, refund.amount_rub)
+            client = AlfaBankClient()
+            provider_status = client.get_status(payment.bank_order_id)
+            _validate_provider_payment_status(payment, provider_status)
+            already_recorded_minor = refunded_amount(payment, exclude_refund_id=refund.pk) * 100
+            target_minor = already_recorded_minor + refund.amount_rub * 100
+            provider_refunded_minor = provider_status.refunded_amount_minor or 0
+            if provider_refunded_minor >= target_minor:
+                provider_payload = {
+                    "reconciled": True,
+                    "providerRefundedAmount": provider_refunded_minor,
+                    "status": provider_status.raw,
+                }
+            elif provider_refunded_minor == already_recorded_minor:
+                if is_recovery:
+                    raise PaymentProviderError(
+                        "Alfa-Bank has not confirmed the earlier refund; automatic resend is blocked to prevent a duplicate."
+                    )
+                provider_payload = client.refund(payment.bank_order_id, refund.amount_rub)
+            else:
+                raise PaymentProviderError(
+                    "Alfa-Bank refund amount is between known internal states; manual reconciliation is required."
+                )
             provider_reference = payment.bank_order_id
         else:
             raise PaymentProviderError(f"Unsupported refund provider: {payment.provider}.")

@@ -18,7 +18,11 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  quality:
+    uses: ./.github/workflows/ci.yml
+
   deploy:
+    needs: quality
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     steps:
@@ -79,7 +83,7 @@ jobs:
         run: |
           "$HOME/yc/bin/yc" config set token "$IAM_TOKEN"
           "$HOME/yc/bin/yc" compute ssh --id "$YC_VM_ID" --command \
-            "cd /opt/zemazap && git fetch origin main && git checkout --detach $GITHUB_SHA && YC_REGISTRY_ID=$YC_REGISTRY_ID IMAGE_TAG=$GITHUB_SHA docker compose -f compose.yandex.yml pull && YC_REGISTRY_ID=$YC_REGISTRY_ID IMAGE_TAG=$GITHUB_SHA docker compose -f compose.yandex.yml up -d --remove-orphans"
+            "cd /opt/zemazap && git fetch origin main && git checkout --detach $GITHUB_SHA && YC_REGISTRY_ID=$YC_REGISTRY_ID IMAGE_TAG=$GITHUB_SHA docker compose -f compose.yandex.yml pull && YC_REGISTRY_ID=$YC_REGISTRY_ID IMAGE_TAG=$GITHUB_SHA docker compose -f compose.yandex.yml run --rm --no-deps --entrypoint python django backend/manage.py migrate --noinput && YC_REGISTRY_ID=$YC_REGISTRY_ID IMAGE_TAG=$GITHUB_SHA docker compose -f compose.yandex.yml run --rm --no-deps --entrypoint python django backend/manage.py check_launch_content && YC_REGISTRY_ID=$YC_REGISTRY_ID IMAGE_TAG=$GITHUB_SHA docker compose -f compose.yandex.yml up -d --remove-orphans"
 
       - name: Smoke check deployed version
         env:

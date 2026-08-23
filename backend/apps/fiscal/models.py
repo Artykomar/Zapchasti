@@ -9,6 +9,7 @@ class FiscalReceipt(models.Model):
     class Status(models.TextChoices):
         DRAFT = "draft", "draft"
         VALIDATED = "validated", "validated"
+        PENDING_CONFIRMATION = "pending_confirmation", "pending confirmation"
         SENT = "sent", "sent"
         FAILED = "failed", "failed"
 

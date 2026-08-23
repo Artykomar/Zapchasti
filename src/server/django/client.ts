@@ -1,4 +1,5 @@
 const DEFAULT_DJANGO_API_URL = "http://127.0.0.1:8000";
+const DEFAULT_DJANGO_PUBLIC_URL = "http://127.0.0.1:8000";
 
 export class DjangoApiError extends Error {
   status: number;
@@ -15,6 +16,14 @@ export const getDjangoApiBaseUrl = () =>
 export const buildDjangoApiUrl = (path: string) => {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   return `${getDjangoApiBaseUrl()}${normalizedPath}`;
+};
+
+export const getDjangoPublicBaseUrl = () =>
+  (process.env.ZEMAZAP_DJANGO_PUBLIC_URL || DEFAULT_DJANGO_PUBLIC_URL).replace(/\/+$/, "");
+
+export const buildDjangoPublicUrl = (path: string) => {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return `${getDjangoPublicBaseUrl()}${normalizedPath}`;
 };
 
 export const fetchDjangoRaw = (path: string, init: RequestInit = {}) =>

@@ -1135,3 +1135,77 @@ GitHub:
 - 2026-08-20: добавлены 404/global error, conditional `/bank-review`, безопасная schema.org-разметка, CSP/HSTS, Open Graph/Twitter metadata и project asset `public/og-image.png` (built-in image generation; clean automotive parts product composition without logos/text).
 - 2026-08-20: локальные Django и Next dev-серверы подняты на `127.0.0.1:8000` и `127.0.0.1:3000`. Проверки перед публикацией: `manage.py check`, `makemigrations --check --dry-run`, 54 backend tests, production-like `check --deploy` с PostgreSQL/Object Storage contract, `npm run typecheck`, `next build`, `npm audit --omit=dev`, YAML parse и smoke маршрутов — успешно.
 - 2026-08-20: после первого зеленого GitHub CI обновлены официальные actions до актуальных Node 24/26-compatible major versions (`checkout@v7`, `setup-python@v7`, `setup-node@v7`, `github-script@v9`), чтобы убрать предупреждения о принудительном запуске старых Node 20 actions.
+- 2026-08-23: после merge работа подтверждена на `main`; устаревшая соседняя
+  копия `Zapchasti-master` удалена. Изменения после прежнего checkpoint проверены
+  повторно, launch-blockers переоценены по фактическому коду и Compose.
+- 2026-08-23: Python contract обновлен до текущих стабильных pins, включая Django
+  6.1, DRF 3.18.0, sqlparse 0.6.0, boto3 1.43.78, psycopg 3.3.4, Gunicorn
+  26.1.0 и WhiteNoise 6.12.0. CI теперь запускает `pip-audit`; deploy зависит от
+  полного reusable CI workflow.
+- 2026-08-23: исправлен production ingress: Caddy на `:8080` является единственной
+  публичной точкой и направляет storefront в Next.js, а `/admin`, `/static`,
+  `/media`, payment/import API — в Django. Next admin handoff использует отдельный
+  browser-visible URL; Gunicorn access log не записывает query string.
+- 2026-08-23: добавлен Compose operations scheduler для server-to-server payment
+  reconciliation, notification queue, fiscal retry и retention. SMTP/Telegram
+  больше не блокируют HTTP request. Добавлены granular payment permissions и
+  admin action создания ссылок; consent versions принудительно берутся с сервера.
+- 2026-08-23: безопасный повтор Alfa-refund сначала сверяет уже возвращенную сумму,
+  поэтому сбой после ответа провайдера не ведет к слепому двойному возврату.
+  Alfa receipt больше не получает ложный `sent`: до подтверждения кассы/ОФД он
+  имеет `pending_confirmation` и показывается как критический.
+- 2026-08-23: production checks отклоняют placeholder legal/contact values,
+  не-HTTPS Alfa gateway, короткий callback token и отсутствующий tax system.
+  Payment-return page сообщает об успехе только после серверного статуса.
+  Backend regression suite расширен до 63 тестов и проходит на Django 6.1.
+- 2026-08-23: оставшиеся P0 находятся вне репозитория: реальные данные/тексты,
+  Yandex Cloud и backups/monitoring, банковские credentials/moderation, касса/ОФД
+  и их финальная receipt confirmation, реальные прайсы и staging acceptance.
+- 2026-08-23: устранен разрыв между Django `LegalDocument` и hard-coded frontend
+  drafts: опубликованные документы теперь отдаются публичным safe API и выводятся
+  как plain text на policy/consent/terms/delivery pages. `check_launch_content`
+  требует 7 непустых non-placeholder документов, а deploy выполняет этот gate до
+  замены работающих контейнеров.
+- 2026-08-23: локальная SQLite была сохранена как
+  `backend/data/zemazap_django.pre-20260823.sqlite3`, затем успешно обновлена всеми
+  18 накопившимися миграциями. Финальные проверки: 63 backend tests,
+  `makemigrations --check`, production `check --deploy`, TypeScript, Next build,
+  Python/npm audits без известных уязвимостей, YAML parse, Caddy config validate и
+  live smoke через Caddy (health/storefront/admin/static/callback/404) — успешно.
+  Docker Engine на этой машине отсутствует, поэтому сборка Compose images остается
+  проверкой CI/staging.
+- 2026-08-23: по результатам ручной проверки локального сайта исправлена адаптивная
+  верстка корзины: счетчик количества, цена и удаление собраны в отдельную группу с
+  устойчивыми отступами на desktop/mobile. Поля checkout больше не расширяют grid
+  за внутреннюю границу, а ссылки на согласие и политику снова отображаются как
+  inline-текст, а не как полноширинные кнопки. Заголовок итогового блока получил
+  отдельный responsive-размер, чтобы длинное «подтверждению» не прижималось к
+  правой границе фиксированной desktop-колонки.
+- 2026-08-23: добавлен изолированный browser E2E-контур Playwright: каталог и
+  корзина-заявка, отдельная заявка, избранное, переход и вход в Django admin,
+  безопасная семантика payment-return. Контур использует порты `3100`/`8100`,
+  отдельную SQLite и одноразовый admin; 5 сценариев проходят в Chromium локально
+  и добавлены отдельным обязательным job в GitHub CI.
+- 2026-08-23: удалены frontend demo arrays и вымышленные публичные отзывы.
+  `src/data/catalog.ts` теперь содержит только типы/helpers, товары читаются через
+  Django API. Для MVP избранное осознанно оставлено в `localStorage` текущего
+  браузера; исправлено его удаление повторным кликом. Product JSON-LD включается
+  только после разрешения индексации и заполнения реквизитов продавца.
+- 2026-08-23: без Docker выполнена native PostgreSQL-приемка на portable
+  PostgreSQL 18.6 x64/UTF-8: все миграции, checks, 63 теста, двойной
+  `bootstrap_roles`, scheduler once, retention dry-run и backup/restore. После
+  восстановления подтверждены 12 товаров и 5 RBAC-групп; сервер штатно остановлен.
+  Зафиксирована особенность Windows: binaries/data для `initdb` следует держать в
+  ASCII-only пути, иначе кириллица рабочего каталога повреждается кодовой страницей.
+- 2026-08-23: PyCharm подтвержден на `.venv` (Python 3.12.13). Старый `venv` был
+  сломан ссылкой на отсутствующий Python 3.11 и удален. Реальные прайсы и
+  production SEO/юридический контент остаются задачами CEO. Для `pip-audit` в
+  кириллическом Windows path зафиксирован `PYTHONUTF8=1`, обходящий ошибку decode
+  во внутреннем `pip-api`.
+- 2026-08-23: финальный локальный gate после review: 64 Django tests на SQLite,
+  5 Playwright E2E, `check`, `makemigrations --check`, TypeScript, Next production
+  build, Python compile, GitHub/Compose YAML parse и полные Python/npm audits —
+  успешно. Disposable PostgreSQL/backup/browser artifacts удалены, тестовые
+  серверы остановлены. `check --deploy` и `check_launch_content` ожидаемо не
+  проходят только на отсутствующих CEO-owned реквизитах, 7 юридических документах,
+  production PostgreSQL/Object Storage и HTTPS-настройках; заглушки не создавались.

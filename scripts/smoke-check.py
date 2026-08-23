@@ -9,7 +9,7 @@ from urllib import error, request
 BASE_URL = (
     sys.argv[1]
     if len(sys.argv) > 1
-    else os.getenv("ZEMAZAP_SMOKE_BASE_URL", "http://127.0.0.1:3000")
+    else os.getenv("ZEMAZAP_SMOKE_BASE_URL", "http://127.0.0.1:8080")
 ).rstrip("/")
 CHECKS = [
     ("frontend health", "/api/health", {200}),
@@ -18,6 +18,8 @@ CHECKS = [
     ("request", "/request", {200}),
     ("contacts", "/contacts", {200}),
     ("admin handoff", "/admin", {200, 301, 302, 307, 308}),
+    ("admin static routing", "/static/admin/css/base.css", {200}),
+    ("payment callback rejects GET", "/api/payments/alfa/callback/", {405}),
     ("not found", "/definitely-not-a-real-zemazap-route", {404}),
 ]
 

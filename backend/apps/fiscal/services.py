@@ -13,7 +13,12 @@ from .models import FiscalReceipt, FiscalReceiptEvent, FiscalReceiptItem
 
 def _provider_status() -> tuple[str, str]:
     provider = str(getattr(settings, "FISCAL_PROVIDER", "mock"))
-    return provider, FiscalReceipt.Status.SENT if provider == "alfa" else FiscalReceipt.Status.VALIDATED
+    status = (
+        FiscalReceipt.Status.PENDING_CONFIRMATION
+        if provider == "alfa"
+        else FiscalReceipt.Status.VALIDATED
+    )
+    return provider, status
 
 
 def _copy_order_items(receipt: FiscalReceipt) -> None:
@@ -140,5 +145,10 @@ def retry_failed_receipt(receipt: FiscalReceipt) -> FiscalReceipt:
     receipt.status = receipt_status
     receipt.error_message = ""
     receipt.save(update_fields=["provider", "status", "error_message", "updated_at"])
-    FiscalReceiptEvent.objects.create(receipt=receipt, event_type="receipt_retry_scheduled")
+    event_type = (
+        "receipt_manual_reconciliation_required"
+        if provider == "alfa"
+        else "receipt_retry_validated"
+    )
+    FiscalReceiptEvent.objects.create(receipt=receipt, event_type=event_type)
     return receipt

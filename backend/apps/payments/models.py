@@ -37,7 +37,11 @@ class Payment(models.Model):
             models.Index(fields=["order", "status"]),
             models.Index(fields=["public_id"]),
         ]
-        permissions = [("view_payment_details", "Can view payment provider details")]
+        permissions = [
+            ("view_payment_details", "Can view payment provider details"),
+            ("create_payment_link", "Can create payment links"),
+            ("reconcile_payment", "Can reconcile payment status with provider"),
+        ]
 
     def __str__(self) -> str:
         return f"Payment #{self.id} for order {self.order_id}"

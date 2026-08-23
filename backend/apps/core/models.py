@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 
 class SingletonModel(models.Model):
@@ -117,6 +118,15 @@ class LegalDocument(models.Model):
 
     def __str__(self) -> str:
         return f"{self.get_kind_display()} — {self.version}"
+
+    def save(self, *args, **kwargs):
+        if self.is_published and self.published_at is None:
+            self.published_at = timezone.now()
+        elif not self.is_published:
+            self.published_at = None
+        if kwargs.get("update_fields") is not None:
+            kwargs["update_fields"] = set(kwargs["update_fields"]) | {"published_at"}
+        super().save(*args, **kwargs)
 
 
 class RetentionPolicy(SingletonModel):

@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand
+from django.db.models import Q
 from django.utils import timezone
 
 from apps.notifications.models import NotificationDelivery
@@ -13,11 +14,14 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         deliveries = NotificationDelivery.objects.filter(
-            status=NotificationDelivery.Status.FAILED,
-            next_attempt_at__lte=timezone.now(),
-        ).order_by("next_attempt_at")
+            Q(status=NotificationDelivery.Status.PENDING)
+            | Q(
+                status=NotificationDelivery.Status.FAILED,
+                next_attempt_at__lte=timezone.now(),
+            )
+        ).order_by("created_at")
         processed = 0
         for delivery in deliveries[: max(1, options["limit"])]:
             deliver_notification(delivery)
             processed += 1
-        self.stdout.write(f"Retried {processed} notification(s).")
+        self.stdout.write(f"Processed {processed} notification(s).")

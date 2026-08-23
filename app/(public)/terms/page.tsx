@@ -1,10 +1,18 @@
+import { PublishedLegalDocument } from "@/src/components/PublishedLegalDocument";
+import { getPublishedLegalDocument } from "@/src/server/django/siteSettings";
 import { siteConfig, hasPublicLegalEntity } from "@/src/server/siteConfig";
 
-export default function TermsPage() {
+export const dynamic = "force-dynamic";
+
+export default async function TermsPage() {
   const legalReady = hasPublicLegalEntity();
+  const document = await getPublishedLegalDocument("terms");
 
   return (
     <main className="page-shell">
+      {document ? (
+        <PublishedLegalDocument document={document} />
+      ) : (
       <section className="page-heading">
         <p className="eyebrow">Условия заказа</p>
         <h1>Публичные условия заказа и оплаты</h1>
@@ -13,6 +21,7 @@ export default function TermsPage() {
           заявкой, а финальную цену, срок, доставку и применимость подтверждает менеджер.
         </p>
       </section>
+      )}
 
       <section className="legal-text">
         <h2>Реквизиты продавца</h2>
@@ -40,8 +49,9 @@ export default function TermsPage() {
       <section className="legal-text">
         <h2>Оплата и подтверждение</h2>
         <p>
-          Онлайн-оплата будет доступна только для подтвержденного заказа. Сайт не должен принимать и
-          хранить номер карты, CVV, срок действия карты или другие карточные данные.
+          {siteConfig.paymentsEnabled ? "Онлайн-оплата доступна" : "Онлайн-оплата будет доступна"}
+          {" "}только для подтвержденного заказа. Сайт не принимает и не хранит номер карты, CVV,
+          срок действия карты или другие карточные данные.
         </p>
       </section>
     </main>

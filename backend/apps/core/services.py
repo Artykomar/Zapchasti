@@ -102,6 +102,7 @@ def build_public_site_settings() -> dict:
                 {
                     "version": document.version,
                     "title": document.title,
+                    "body": document.body,
                     "publishedAt": document.published_at.isoformat() if document.published_at else None,
                 },
             )

@@ -1,4 +1,7 @@
 from django.contrib import admin, messages
+from django.core.exceptions import ValidationError
+
+from apps.payments.services import create_payment_link_for_order
 
 from .models import Order, OrderComment, OrderItem, OrderStatusHistory
 
@@ -27,7 +30,7 @@ class OrderAdmin(admin.ModelAdmin):
     search_fields = ("=id", "token", "customer_name", "contact", "items__article", "items__part_name")
     readonly_fields = ("token", "created_at", "updated_at", "confirmed_at")
     inlines = [OrderItemInline, OrderStatusHistoryInline, OrderCommentInline]
-    actions = ["mark_confirmed"]
+    actions = ["mark_confirmed", "create_payment_links"]
 
     def get_list_display(self, request):
         if request.user.has_perm("orders.view_order_pii") or request.user.is_superuser:
@@ -57,3 +60,21 @@ class OrderAdmin(admin.ModelAdmin):
                 order.mark_confirmed(note=f"Confirmed by {request.user}.")
                 updated += 1
         self.message_user(request, f"Confirmed {updated} order(s).", messages.SUCCESS)
+
+    def has_create_payment_link_permission(self, request):
+        return request.user.has_perm("payments.create_payment_link")
+
+    @admin.action(description="Create payment links for selected orders", permissions=["create_payment_link"])
+    def create_payment_links(self, request, queryset):
+        created = 0
+        errors = []
+        for order in queryset:
+            try:
+                create_payment_link_for_order(order)
+                created += 1
+            except ValidationError as exc:
+                errors.append(f"#{order.pk}: {'; '.join(exc.messages)}")
+        if created:
+            self.message_user(request, f"Payment links ready: {created}.", messages.SUCCESS)
+        if errors:
+            self.message_user(request, " ".join(errors[:10]), messages.ERROR)

@@ -7,6 +7,16 @@ from django.core.checks import Error, Tags, Warning, register
 VALID_PAYMENT_MODES = {"test", "prod"}
 VALID_PAYMENT_PROVIDERS = {"alfa", "mock"}
 VALID_FISCAL_PROVIDERS = {"alfa", "mock"}
+PLACEHOLDER_MARKERS = (
+    "example",
+    "draft",
+    "unknown",
+    "уточняется",
+    "будет задан",
+    "+7 (000)",
+    "+7000",
+    "ндс не задан",
+)
 
 
 def _is_local_url(value: str) -> bool:
@@ -15,6 +25,11 @@ def _is_local_url(value: str) -> bool:
 
 def _missing_setting(name: str) -> bool:
     return not str(getattr(settings, name, "")).strip()
+
+
+def _placeholder_setting(name: str) -> bool:
+    value = str(getattr(settings, name, "")).strip().lower()
+    return not value or any(marker in value for marker in PLACEHOLDER_MARKERS)
 
 
 @register(Tags.security)
@@ -86,6 +101,14 @@ def launch_configuration_checks(app_configs, **kwargs):
                     id="zemazap.E005",
                 )
             )
+        gateway_url = str(getattr(settings, "ALFA_BANK_GATEWAY_URL", "")).strip()
+        if gateway_url and not gateway_url.startswith("https://"):
+            messages.append(Error("ALFA_BANK_GATEWAY_URL must use HTTPS.", id="zemazap.E014"))
+        callback_token = str(getattr(settings, "ALFA_BANK_CALLBACK_TOKEN", ""))
+        if callback_token and len(callback_token) < 32:
+            messages.append(Error("ALFA_BANK_CALLBACK_TOKEN must be at least 32 characters.", id="zemazap.E015"))
+        if fiscal_provider == "alfa" and _missing_setting("FISCAL_TAX_SYSTEM"):
+            messages.append(Error("FISCAL_TAX_SYSTEM is required for Alfa fiscalization.", id="zemazap.E016"))
 
     if getattr(settings, "ZEMAZAP_TELEGRAM_BOT_TOKEN", "") and not getattr(
         settings, "PII_IN_NOTIFICATIONS_ALLOWED", False
@@ -131,7 +154,12 @@ def production_launch_configuration_checks(app_configs, **kwargs):
 
     for setting_name in (
         "ZEMAZAP_PUBLIC_PHONE_LABEL",
+        "ZEMAZAP_PUBLIC_PHONE_HREF",
         "ZEMAZAP_PUBLIC_EMAIL",
+        "ZEMAZAP_REGION",
+        "ZEMAZAP_ADDRESS",
+        "ZEMAZAP_BUSINESS_HOURS",
+        "ZEMAZAP_SELLER_PROFILE",
         "ZEMAZAP_LEGAL_NAME",
         "ZEMAZAP_LEGAL_INN",
         "ZEMAZAP_LEGAL_OGRN",
@@ -140,11 +168,14 @@ def production_launch_configuration_checks(app_configs, **kwargs):
         "ZEMAZAP_CLAIMS_EMAIL",
         "ZEMAZAP_PRIVACY_POLICY_VERSION",
         "ZEMAZAP_PRIVACY_CONSENT_VERSION",
+        "ZEMAZAP_TERMS_VERSION",
+        "ZEMAZAP_TAX_MODE",
+        "ZEMAZAP_VAT_LABEL",
     ):
-        if _missing_setting(setting_name):
+        if _placeholder_setting(setting_name):
             messages.append(
                 Error(
-                    f"{setting_name} is required for deployment.",
+                    f"{setting_name} must contain a non-placeholder deployment value.",
                     id="zemazap.E007",
                 )
             )

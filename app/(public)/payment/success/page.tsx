@@ -1,23 +1,44 @@
 import Link from "next/link";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Clock3 } from "lucide-react";
+import { getOrderByToken } from "@/src/server/django/orders";
 
-export default function PaymentSuccessPage() {
+export const dynamic = "force-dynamic";
+
+type PaymentSuccessPageProps = {
+  searchParams: Promise<{ order?: string }>;
+};
+
+const CONFIRMED_STATUSES = new Set(["paid", "partially_refunded", "refunded", "fulfilled"]);
+
+export default async function PaymentSuccessPage({ searchParams }: PaymentSuccessPageProps) {
+  const { order: token } = await searchParams;
+  const order = token ? await getOrderByToken(token) : undefined;
+  const isConfirmed = Boolean(order && CONFIRMED_STATUSES.has(order.status));
+
   return (
     <main className="page-shell">
       <section className="page-heading">
         <p className="eyebrow">Оплата</p>
-        <h1>Платеж отмечен как успешный</h1>
+        <h1>{isConfirmed ? "Оплата подтверждена" : "Платеж проверяется"}</h1>
         <p>
-          В production финальный статус будет подтверждаться server-to-server проверкой у платежного
-          провайдера, а не только переходом браузера.
+          Возврат браузера из банка сам по себе не подтверждает оплату. Финальный статус сайт получает
+          напрямую от платежного провайдера.
         </p>
       </section>
       <section className="info-panel">
-        <CheckCircle2 size={28} aria-hidden="true" />
+        {isConfirmed ? (
+          <CheckCircle2 size={28} aria-hidden="true" />
+        ) : (
+          <Clock3 size={28} aria-hidden="true" />
+        )}
         <h2>Следующий шаг</h2>
-        <p>Менеджер проверит оплату в админке и продолжит обработку заказа.</p>
-        <Link className="secondary-action" href="/contacts">
-          Контакты
+        <p>
+          {isConfirmed
+            ? "Заказ оплачен и передан менеджеру в дальнейшую обработку."
+            : "Статус обновится после server-to-server проверки. Если он не изменится, свяжитесь с магазином."}
+        </p>
+        <Link className="secondary-action" href={token ? `/orders/${token}` : "/contacts"}>
+          {token ? "Открыть заказ" : "Контакты"}
         </Link>
       </section>
     </main>

@@ -3,7 +3,7 @@ import secrets
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAdminUser
+from rest_framework.permissions import AllowAny, BasePermission
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -14,8 +14,27 @@ from .serializers import PaymentLinkSerializer
 from .services import apply_mock_payment_callback, create_payment_link_for_order, synchronize_payment_status
 
 
+class HasPaymentPermission(BasePermission):
+    required_permission = ""
+
+    def has_permission(self, request, view):
+        return bool(
+            request.user
+            and request.user.is_staff
+            and request.user.has_perm(self.required_permission)
+        )
+
+
+class CanCreatePaymentLink(HasPaymentPermission):
+    required_permission = "payments.create_payment_link"
+
+
+class CanReconcilePayment(HasPaymentPermission):
+    required_permission = "payments.reconcile_payment"
+
+
 class PaymentLinkCreateAPIView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [CanCreatePaymentLink]
 
     def post(self, request):
         order_id = request.data.get("orderId")
@@ -56,7 +75,7 @@ class MockPaymentCallbackAPIView(APIView):
 
 
 class PaymentStatusRefreshAPIView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [CanReconcilePayment]
 
     def post(self, request):
         public_id = request.data.get("publicId") or request.data.get("paymentId")
@@ -76,7 +95,7 @@ class AlfaPaymentCallbackAPIView(APIView):
 
     def post(self, request):
         configured_token = str(getattr(settings, "ALFA_BANK_CALLBACK_TOKEN", ""))
-        supplied_token = str(request.query_params.get("token", ""))
+        supplied_token = str(request.headers.get("X-Zemazap-Callback-Token") or request.query_params.get("token", ""))
         if not configured_token or not secrets.compare_digest(configured_token, supplied_token):
             return Response({"error": "Invalid callback token."}, status=status.HTTP_403_FORBIDDEN)
 

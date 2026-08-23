@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
 from django.core.management import call_command
 from django.test import TestCase, override_settings
 from unittest.mock import patch
@@ -126,6 +127,19 @@ class PaymentWorkflowTests(TestCase):
 
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.json()["status"], Payment.Status.PENDING)
+
+    @override_settings(PAYMENTS_ENABLED=True, PAYMENTS_MODE="test", PAYMENTS_PROVIDER="alfa")
+    def test_staff_api_requires_payment_link_permission(self):
+        order = self.create_confirmed_order()
+        user = get_user_model().objects.create_user("staff", "staff@example.ru", "pass", is_staff=True)
+        self.client.force_login(user)
+
+        forbidden = self.client.post("/api/payments/create-link/", data={"orderToken": str(order.token)})
+        user.user_permissions.add(Permission.objects.get(codename="create_payment_link"))
+        allowed = self.client.post("/api/payments/create-link/", data={"orderToken": str(order.token)})
+
+        self.assertEqual(forbidden.status_code, 403)
+        self.assertEqual(allowed.status_code, 201)
 
     @override_settings(PAYMENTS_ENABLED=True, PAYMENTS_MODE="test", PAYMENTS_PROVIDER="alfa")
     def test_mock_decline_marks_payment_and_order_failed(self):
@@ -288,8 +302,9 @@ class PaymentWorkflowTests(TestCase):
             data={"orderId": payment.bank_order_id},
         )
         accepted = self.client.post(
-            "/api/payments/alfa/callback/?token=callback-secret",
+            "/api/payments/alfa/callback/",
             data={"orderId": payment.bank_order_id, "status": "paid"},
+            HTTP_X_ZEMAZAP_CALLBACK_TOKEN="callback-secret",
         )
 
         self.assertEqual(forbidden.status_code, 403)

@@ -1,6 +1,11 @@
 from django.core.checks import Tags, run_checks
+from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.test import SimpleTestCase, TestCase, override_settings
+from unittest.mock import patch
 
+from .management.commands.check_launch_content import REQUIRED_DOCUMENT_KINDS
+from .models import LegalDocument
 from .services import build_public_site_settings
 
 
@@ -18,6 +23,66 @@ class PublicSiteSettingsTests(TestCase):
         self.assertIn("contacts", payload)
         self.assertIn("legal", payload)
         self.assertEqual(payload["featureFlags"]["paymentsMode"], "test")
+
+    def test_public_site_settings_exposes_only_published_legal_document(self):
+        published = LegalDocument.objects.create(
+            kind=LegalDocument.Kind.PRIVACY_POLICY,
+            version="policy-v1",
+            title="Политика",
+            body="Утвержденный публичный текст политики.",
+            is_published=True,
+        )
+        LegalDocument.objects.create(
+            kind=LegalDocument.Kind.TERMS,
+            version="private-draft",
+            title="Черновик",
+            body="Не публиковать",
+            is_published=False,
+        )
+
+        payload = build_public_site_settings()
+
+        self.assertEqual(payload["documents"]["published"]["privacy_policy"]["body"], published.body)
+        self.assertNotIn("terms", payload["documents"]["published"])
+
+    def test_unpublishing_resets_timestamp_so_republishing_becomes_current(self):
+        document = LegalDocument.objects.create(
+            kind=LegalDocument.Kind.PRIVACY_POLICY,
+            version="policy-v1",
+            title="Политика",
+            body="Утвержденный публичный текст политики.",
+            is_published=True,
+        )
+        first_published_at = document.published_at
+
+        document.is_published = False
+        document.save()
+        self.assertIsNone(document.published_at)
+
+        document.is_published = True
+        document.save()
+        self.assertIsNotNone(document.published_at)
+        self.assertGreaterEqual(document.published_at, first_published_at)
+
+    @override_settings(
+        ZEMAZAP_PRIVACY_POLICY_VERSION="2026-08-23-v1",
+        ZEMAZAP_PRIVACY_CONSENT_VERSION="2026-08-23-v1",
+        ZEMAZAP_TERMS_VERSION="2026-08-23-v1",
+    )
+    def test_launch_content_command_requires_all_approved_documents(self):
+        with self.assertRaises(CommandError):
+            call_command("check_launch_content")
+
+        for kind in REQUIRED_DOCUMENT_KINDS:
+            LegalDocument.objects.create(
+                kind=kind,
+                version="2026-08-23-v1",
+                title=f"Утвержденный документ: {kind}",
+                body=("Утвержденные условия работы магазина и права покупателя. " * 5),
+                is_published=True,
+            )
+
+        call_command("check_launch_content", verbosity=0)
 
 
 class LaunchConfigurationChecksTests(SimpleTestCase):
@@ -60,3 +125,38 @@ class LaunchConfigurationChecksTests(SimpleTestCase):
         ids = {message.id for message in messages}
         self.assertIn("zemazap.E004", ids)
         self.assertIn("zemazap.E005", ids)
+
+    @override_settings(
+        PAYMENTS_ENABLED=True,
+        PAYMENTS_MODE="prod",
+        PAYMENTS_PROVIDER="alfa",
+        ZEMAZAP_SELLER_PROFILE="ooo",
+        FISCALIZATION_ENABLED=True,
+        FISCAL_PROVIDER="alfa",
+        FISCAL_TAX_SYSTEM="",
+        ALFA_BANK_GATEWAY_URL="http://bank.invalid",
+        ALFA_BANK_TOKEN="token",
+        ALFA_BANK_CALLBACK_TOKEN="short",
+    )
+    def test_production_payment_contract_rejects_insecure_values(self):
+        ids = {message.id for message in run_checks(tags=[Tags.security])}
+
+        self.assertIn("zemazap.E014", ids)
+        self.assertIn("zemazap.E015", ids)
+        self.assertIn("zemazap.E016", ids)
+
+
+class OperationsSchedulerTests(SimpleTestCase):
+    @patch("apps.core.management.commands.run_operations_scheduler.call_command")
+    def test_once_runs_all_operational_commands(self, scheduled_call_command):
+        call_command("run_operations_scheduler", once=True)
+
+        self.assertEqual(
+            [call.args[0] for call in scheduled_call_command.call_args_list],
+            [
+                "reconcile_pending_payments",
+                "retry_failed_receipts",
+                "retry_notifications",
+                "anonymize_personal_data",
+            ],
+        )

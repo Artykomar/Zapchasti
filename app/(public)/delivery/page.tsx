@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { CreditCard, PackageCheck, RotateCcw, Truck } from "lucide-react";
+import { LegalDocumentBody } from "@/src/components/PublishedLegalDocument";
+import { getPublishedLegalDocuments } from "@/src/server/django/siteSettings";
 
 const steps = [
   { icon: PackageCheck, title: "Резерв", text: "Позиция закрепляется после подтверждения менеджером." },
@@ -8,18 +10,36 @@ const steps = [
   { icon: RotateCcw, title: "Возврат", text: "Правила возврата и гарантии нужно финализировать с юридическими реквизитами." }
 ];
 
-export default function DeliveryPage() {
+export const dynamic = "force-dynamic";
+
+export default async function DeliveryPage() {
+  const documents = await getPublishedLegalDocuments(["delivery", "payment", "warranty", "returns"]);
+  const hasCompleteConditions = documents.length === 4;
+
   return (
     <main className="page-shell">
       <section className="page-heading">
         <p className="eyebrow">Доставка, оплата и гарантии</p>
-        <h1>Страница условий готова к юридическому заполнению</h1>
+        <h1>{hasCompleteConditions ? "Доставка, оплата, гарантия и возвраты" : "Страница условий готова к юридическому заполнению"}</h1>
         <p>
-          Сейчас это безопасная заготовка без обещаний, которые зависят от платежной системы,
-          склада, региона и выбранной транспортной схемы.
+          {hasCompleteConditions
+            ? "Ниже опубликованы действующие условия магазина."
+            : "Сейчас это безопасная заготовка без обещаний, которые зависят от платежной системы, склада, региона и выбранной транспортной схемы."}
         </p>
       </section>
 
+      {hasCompleteConditions ? (
+        <section className="info-grid">
+          {documents.map((document) => (
+            <article className="legal-text" key={document.kind}>
+              <h2>{document.title}</h2>
+              <p>Версия: {document.version}</p>
+              <LegalDocumentBody document={document} />
+            </article>
+          ))}
+        </section>
+      ) : (
+        <>
       <section className="info-grid info-grid--four">
         {steps.map((step) => {
           const Icon = step.icon;
@@ -32,8 +52,10 @@ export default function DeliveryPage() {
           );
         })}
       </section>
+        </>
+      )}
 
-      <section className="workspace workspace--split">
+      {!hasCompleteConditions ? <section className="workspace workspace--split">
         <div>
           <div className="section-heading">
             <p className="eyebrow">Что важно решить</p>
@@ -56,7 +78,7 @@ export default function DeliveryPage() {
             Корзина-заявка
           </Link>
         </aside>
-      </section>
+      </section> : null}
     </main>
   );
 }

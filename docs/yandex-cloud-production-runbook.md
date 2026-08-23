@@ -1,20 +1,25 @@
 # Yandex Cloud production runbook
 
-Дата актуализации: 2026-08-20.
+Дата актуализации: 2026-08-23.
 
 ## Целевая схема
 
 ```text
 DNS -> Certificate Manager -> Application Load Balancer
     -> Smart Web Security/WAF -> VM с Docker Compose
-        -> Next.js frontend
-        -> Django/Gunicorn
+        -> Caddy :8080
+            -> Next.js frontend
+            -> Django/Gunicorn (/admin, /static, /media, payment/import API)
+        -> Django operations scheduler
         -> Managed PostgreSQL (закрытая подсеть)
         -> Object Storage (фото и документы)
         -> Lockbox (секреты)
 ```
 
-База PostgreSQL не получает публичный IP. Порт Django не публикуется наружу. На VM открыт только вход от балансировщика; SSH ограничен административным IP или заменен управляемым доступом.
+База PostgreSQL не получает публичный IP. Порты Django и Next.js не публикуются
+наружу. Target group балансировщика обращается к Caddy на порту `8080`; security
+group разрешает этот порт только от балансировщика. SSH ограничен
+административным IP или заменен управляемым доступом.
 
 ## Последовательность создания
 
@@ -24,7 +29,9 @@ DNS -> Certificate Manager -> Application Load Balancer
 4. Создать приватный Object Storage bucket. Сервисному аккаунту приложения выдать только доступ к нужному bucket.
 5. Создать Container Registry и включить сканирование образов.
 6. Создать VM/группу VM и привязать отдельный service account с минимальной ролью `container-registry.images.puller` на нужный registry. Установить Docker, Docker Compose и Yandex Cloud CLI; настроить для пользователя деплоя `yc container registry configure-docker` и проверить `docker pull` без `sudo`. Затем использовать `compose.yandex.yml`; `DATABASE_URL` должен указывать на Managed PostgreSQL.
-7. Создать Application Load Balancer, HTTPS-сертификат и DNS-записи. После проверки включить HSTS.
+7. Создать Application Load Balancer, HTTPS-сертификат и DNS-записи. Backend target
+   должен указывать на VM port `8080`; health-check — `/api/health`. После проверки
+   включить HSTS.
 8. Подключить Smart Web Security/WAF, rate limiting и журналирование событий безопасности.
 9. Настроить Monitoring: доступность `/api/health`, 5xx, задержка, CPU/RAM/disk, соединения PostgreSQL, ошибки платежей и фискализации.
 10. Настроить GitHub OIDC federation. Не использовать долгоживущий JSON-ключ сервисного аккаунта в GitHub Secrets.
@@ -58,13 +65,21 @@ DNS -> Certificate Manager -> Application Load Balancer
 
 ## Первый деплой
 
-1. Заполнить реальные публичные данные и секреты в staging.
+1. Заполнить реальные публичные данные и секреты в staging. До автоматического
+   rollout создать через Django Admin/fixture семь утвержденных `LegalDocument`;
+   deploy запускает `check_launch_content` до переключения контейнеров.
 2. Собрать оба образа из одного commit SHA и пометить тегом SHA.
 3. Выполнить миграции на пустой staging PostgreSQL.
 4. Запустить `seed_demo` только в staging; production наполнять проверенным импортом.
 5. Выполнить `check --deploy`, smoke-check и тестовый платежный цикл.
+   Убедиться, что контейнер `scheduler` работает и обрабатывает pending-уведомление.
 6. Создать ручной backup перед production-миграцией.
 7. Развернуть тот же SHA в production, затем выполнить smoke-check.
+
+Frontend env должен содержать внутренний `ZEMAZAP_DJANGO_API_URL=http://django:8000`
+и browser-visible `ZEMAZAP_DJANGO_PUBLIC_URL=https://<production-domain>`. Публичный
+callback `/api/payments/alfa/callback/` и Django admin обслуживаются тем же доменом
+через Caddy.
 
 ## Backup и восстановление
 

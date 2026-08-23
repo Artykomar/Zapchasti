@@ -8,8 +8,7 @@ import {
   catalogStorageKeys,
   readStoredCatalogItems,
   type StoredCatalogItem,
-  toggleStoredCatalogItem,
-  upsertStoredCatalogItem
+  toggleStoredCatalogItem
 } from "@/src/components/catalogStorage";
 
 const toStoredItem = (part: Part): StoredCatalogItem => ({
@@ -62,8 +61,8 @@ export default function ProductActions({ part, compact = false }: ProductActions
       <button
         type="button"
         className={inFavorites ? "icon-action icon-action--done" : "icon-action"}
-        aria-label={inFavorites ? "Товар уже в избранном" : "Добавить товар в избранное"}
-        onClick={() => setInFavorites(upsertStoredCatalogItem(catalogStorageKeys.favorites, item))}
+        aria-label={inFavorites ? "Удалить товар из избранного" : "Добавить товар в избранное"}
+        onClick={() => setInFavorites(toggleStoredCatalogItem(catalogStorageKeys.favorites, item))}
       >
         {inFavorites ? <Check size={17} aria-hidden="true" /> : <Heart size={17} aria-hidden="true" />}
       </button>

@@ -6,6 +6,7 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
@@ -46,7 +47,8 @@ jobs:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: backend/requirements.txt
-      - run: python -m pip install -r backend/requirements.txt
+      - run: python -m pip install -r backend/requirements.txt pip-audit==2.10.1
+      - run: python -m pip_audit -r backend/requirements.txt
       - run: python backend/manage.py migrate --noinput
       - run: python backend/manage.py check
       - run: python backend/manage.py makemigrations --check --dry-run
@@ -54,21 +56,28 @@ jobs:
       - name: Production launch checks
         env:
           DJANGO_DEBUG: "false"
-          DJANGO_ALLOWED_HOSTS: zemazap.example
-          DJANGO_CORS_ALLOWED_ORIGINS: https://zemazap.example
-          DJANGO_CSRF_TRUSTED_ORIGINS: https://zemazap.example
-          ZEMAZAP_SITE_URL: https://zemazap.example
-          ZEMAZAP_PUBLIC_PHONE_LABEL: +7 (900) 000-00-00
-          ZEMAZAP_PUBLIC_EMAIL: shop@zemazap.example
+          DJANGO_ALLOWED_HOSTS: shop.test
+          DJANGO_CORS_ALLOWED_ORIGINS: https://shop.test
+          DJANGO_CSRF_TRUSTED_ORIGINS: https://shop.test
+          ZEMAZAP_SITE_URL: https://shop.test
+          ZEMAZAP_PUBLIC_PHONE_LABEL: +7 (495) 123-45-67
+          ZEMAZAP_PUBLIC_PHONE_HREF: +74951234567
+          ZEMAZAP_PUBLIC_EMAIL: shop@shop.test
+          ZEMAZAP_REGION: Москва и Московская область
+          ZEMAZAP_ADDRESS: Москва, ул. Складская, 1
+          ZEMAZAP_BUSINESS_HOURS: Пн-Сб 09:00-19:00
           ZEMAZAP_SELLER_PROFILE: ooo
-          ZEMAZAP_LEGAL_NAME: ООО Земазап Тест
+          ZEMAZAP_LEGAL_NAME: ООО Земазап
           ZEMAZAP_LEGAL_INN: "7700000000"
           ZEMAZAP_LEGAL_OGRN: "1000000000000"
           ZEMAZAP_LEGAL_ADDRESS: Москва
           ZEMAZAP_ACTUAL_ADDRESS: Москва
-          ZEMAZAP_CLAIMS_EMAIL: claims@zemazap.example
+          ZEMAZAP_CLAIMS_EMAIL: claims@shop.test
           ZEMAZAP_PRIVACY_POLICY_VERSION: ci-v1
           ZEMAZAP_PRIVACY_CONSENT_VERSION: ci-v1
+          ZEMAZAP_TERMS_VERSION: ci-v1
+          ZEMAZAP_TAX_MODE: УСН доходы
+          ZEMAZAP_VAT_LABEL: Без НДС
           STORAGE_BACKEND: yandex
           YANDEX_OBJECT_STORAGE_BUCKET: zemazap-ci
           YANDEX_OBJECT_STORAGE_ACCESS_KEY_ID: ci-access-key
@@ -86,4 +95,24 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run build
-      - run: npm audit --omit=dev
+      - run: npm audit
+
+  e2e:
+    runs-on: ubuntu-latest
+    env:
+      E2E_PYTHON: python
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - run: npm ci
+      - run: python -m pip install -r backend/requirements.txt
+      - run: npx playwright install --with-deps chromium
+      - run: npm run e2e

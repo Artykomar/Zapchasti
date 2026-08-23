@@ -23,7 +23,7 @@ class NotificationServiceTests(TestCase):
             privacy_accepted=True,
         )
 
-        notify_manager_about_request(customer_request)
+        notify_manager_about_request(customer_request, deliver_immediately=True)
 
         self.assertEqual(CustomerRequest.objects.count(), 1)
 
@@ -76,7 +76,7 @@ class NotificationServiceTests(TestCase):
             privacy_accepted=True,
         )
 
-        notify_manager_about_request(customer_request)
+        notify_manager_about_request(customer_request, deliver_immediately=True)
 
         delivery = NotificationDelivery.objects.get()
         self.assertEqual(delivery.status, NotificationDelivery.Status.SENT)
@@ -99,7 +99,7 @@ class NotificationServiceTests(TestCase):
             privacy_accepted=True,
         )
 
-        notify_manager_about_request(customer_request)
+        notify_manager_about_request(customer_request, deliver_immediately=True)
 
         delivery = NotificationDelivery.objects.get()
         self.assertEqual(delivery.status, NotificationDelivery.Status.FAILED)

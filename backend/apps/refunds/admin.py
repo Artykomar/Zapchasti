@@ -25,11 +25,11 @@ class RefundAdmin(admin.ModelAdmin):
     inlines = [RefundItemInline, RefundEventInline]
     actions = ["process_selected_refunds"]
 
-    @admin.action(description="Process selected refunds")
+    def has_process_refund_permission(self, request):
+        return request.user.has_perm("refunds.process_refund")
+
+    @admin.action(description="Process selected refunds", permissions=["process_refund"])
     def process_selected_refunds(self, request, queryset):
-        if not request.user.has_perm("refunds.process_refund") and not request.user.is_superuser:
-            self.message_user(request, "Недостаточно прав для проведения возврата.", messages.ERROR)
-            return
         succeeded = 0
         failed = 0
         for refund in queryset:

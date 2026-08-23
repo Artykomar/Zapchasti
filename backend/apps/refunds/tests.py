@@ -7,7 +7,7 @@ from apps.leads.serializers import CustomerRequestCreateSerializer
 from apps.orders.services import create_order_from_request
 from apps.payments.models import Payment
 
-from apps.payments.providers import PaymentProviderError
+from apps.payments.providers import PaymentProviderError, ProviderPaymentStatus
 
 from .models import Refund, RefundItem
 from .services import create_refund, process_refund
@@ -91,8 +91,18 @@ class RefundWorkflowTests(TestCase):
         payment.provider = "alfa"
         payment.mode = "prod"
         payment.bank_order_id = "alfa-refund-failure"
-        payment.save(update_fields=["provider", "mode", "bank_order_id"])
+        payment.provider_order_number = "ZEMAZAP-REFUND-FAILURE"
+        payment.save(update_fields=["provider", "mode", "bank_order_id", "provider_order_number"])
         refund = create_refund(payment, 10_000, "Сетевая ошибка")
+        client_class.return_value.get_status.return_value = ProviderPaymentStatus(
+            order_status=2,
+            order_number=payment.provider_order_number,
+            amount_minor=payment.amount_rub * 100,
+            deposited_amount_minor=payment.amount_rub * 100,
+            refunded_amount_minor=0,
+            currency="643",
+            raw={"orderStatus": 2},
+        )
         client_class.return_value.refund.side_effect = PaymentProviderError("gateway unavailable")
 
         with self.assertRaisesMessage(ValidationError, "gateway unavailable"):
@@ -101,3 +111,61 @@ class RefundWorkflowTests(TestCase):
         refund.refresh_from_db()
         self.assertEqual(refund.status, Refund.Status.FAILED)
         self.assertTrue(refund.events.filter(event_type="refund_failed").exists())
+
+    @override_settings(FISCALIZATION_ENABLED=False)
+    @patch("apps.refunds.services.AlfaBankClient")
+    def test_failed_refund_retry_reconciles_provider_before_resending(self, client_class):
+        payment = self.create_paid_payment()
+        payment.provider = "alfa"
+        payment.mode = "prod"
+        payment.bank_order_id = "alfa-already-refunded"
+        payment.provider_order_number = "ZEMAZAP-ALREADY-REFUNDED"
+        payment.save(update_fields=["provider", "mode", "bank_order_id", "provider_order_number"])
+        refund = create_refund(payment, 10_000, "Повтор после сбоя БД")
+        refund.status = Refund.Status.FAILED
+        refund.save(update_fields=["status"])
+        client_class.return_value.get_status.return_value = ProviderPaymentStatus(
+            order_status=2,
+            order_number=payment.provider_order_number,
+            amount_minor=payment.amount_rub * 100,
+            deposited_amount_minor=payment.amount_rub * 100,
+            refunded_amount_minor=refund.amount_rub * 100,
+            currency="643",
+            raw={"orderStatus": 2},
+        )
+
+        process_refund(refund)
+
+        refund.refresh_from_db()
+        self.assertEqual(refund.status, Refund.Status.SUCCEEDED)
+        client_class.return_value.refund.assert_not_called()
+        self.assertTrue(refund.events.filter(event_type="refund_succeeded").exists())
+
+    @override_settings(FISCALIZATION_ENABLED=False)
+    @patch("apps.refunds.services.AlfaBankClient")
+    def test_failed_refund_retry_never_blindly_resends(self, client_class):
+        payment = self.create_paid_payment()
+        payment.provider = "alfa"
+        payment.mode = "prod"
+        payment.bank_order_id = "alfa-unconfirmed-refund"
+        payment.provider_order_number = "ZEMAZAP-UNCONFIRMED-REFUND"
+        payment.save(update_fields=["provider", "mode", "bank_order_id", "provider_order_number"])
+        refund = create_refund(payment, 10_000, "Неясный ответ провайдера")
+        refund.status = Refund.Status.FAILED
+        refund.save(update_fields=["status"])
+        client_class.return_value.get_status.return_value = ProviderPaymentStatus(
+            order_status=2,
+            order_number=payment.provider_order_number,
+            amount_minor=payment.amount_rub * 100,
+            deposited_amount_minor=payment.amount_rub * 100,
+            refunded_amount_minor=0,
+            currency="643",
+            raw={"orderStatus": 2},
+        )
+
+        with self.assertRaisesMessage(ValidationError, "automatic resend is blocked"):
+            process_refund(refund)
+
+        refund.refresh_from_db()
+        self.assertEqual(refund.status, Refund.Status.FAILED)
+        client_class.return_value.refund.assert_not_called()

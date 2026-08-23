@@ -1,9 +1,19 @@
 import Link from "next/link";
+import { PublishedLegalDocument } from "@/src/components/PublishedLegalDocument";
 import { siteConfig } from "@/src/server/siteConfig";
+import { getPublishedLegalDocument } from "@/src/server/django/siteSettings";
 
-export default function PrivacyPolicyPage() {
+export const dynamic = "force-dynamic";
+
+export default async function PrivacyPolicyPage() {
+  const document = await getPublishedLegalDocument("privacy_policy");
+
   return (
     <main className="page-shell">
+      {document ? (
+        <PublishedLegalDocument document={document} />
+      ) : (
+        <>
       <section className="page-heading">
         <p className="eyebrow">Документы</p>
         <h1>Политика обработки персональных данных</h1>
@@ -28,6 +38,8 @@ export default function PrivacyPolicyPage() {
           условия заказа вынесены в <Link href="/terms">публичные условия заказа</Link>.
         </p>
       </section>
+        </>
+      )}
     </main>
   );
 }

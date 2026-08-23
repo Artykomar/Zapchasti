@@ -81,7 +81,7 @@ export default async function OrderPage({ params }: OrderPageProps) {
           <p>{order.vat_label}</p>
           {order.payment_url ? (
             <a className="secondary-action" href={order.payment_url}>
-              Перейти к тестовой оплате
+              {siteConfig.paymentsMode === "test" ? "Перейти к тестовой оплате" : "Перейти к оплате"}
             </a>
           ) : (
             <p>Платежная ссылка появится после подтверждения менеджером.</p>

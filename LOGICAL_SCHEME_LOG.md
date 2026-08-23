@@ -38,9 +38,9 @@ P:[/request]>{name,phone,vehicle,request_text,privacy-consent}>B:[POST /api/requ
 P:[/orders/[token]]>{confirmed order snapshot,total,status,payment_url?}>A:[pay if link]>X:[payment provider/mock]
 P:[/payment/success|/payment/fail]>P:[contacts|order]
 P:[/contacts]>{tel,mailto,MAX?,address,map-placeholder,legal-details}
-P:[/delivery]>{reserve,payment,delivery,warranty,return terms draft}
-P:[/privacy-policy|/personal-data-consent|/terms]>{legal drafts,versions}
-P:[/about|/reviews]>{trust content,non-transactional}
+P:[/delivery]>{published legal text|safe fallback before approval}
+P:[/privacy-policy|/personal-data-consent|/terms]>{published LegalDocument,version|safe fallback}
+P:[/about|/reviews]>{trust content,moderated real reviews only,non-transactional}
 !:[no public buybacks; no card data input; real contacts/legal data pending]
 ```
 
@@ -105,4 +105,48 @@ B:[contacts block]>D:[theme options/contact settings]>X:[tel,mailto,Telegram,Wha
 R:[Manager/Admin]>A:[manage products/orders/leads/pages]>B:[WordPress/WooCommerce admin]
 !:[payment/acquiring/fiscalization not confirmed from public view]
 !:[admin roles, CRM, notifications, order processing cannot be verified without access]
+```
+
+## 5. `zemazap_production_flow_2026_08_23`
+
+```text
+X:[DNS+ALB+HTTPS+WAF]>B:[Caddy :8080]
+B:[Caddy]>?{path}
+?{/admin|/static|/media|/api/payments|/api/imports}>B:[Django/Gunicorn]
+?{other}>B:[Next.js standalone]
+B:[Next server routes]>B:[Django internal :8000]
+B:[Django Admin publish LegalDocument]>D:[approved versioned plain text]
+D:[published LegalDocument]>B:[safe site-settings API]>P:[policy|consent|terms|delivery]
+B:[deploy preflight]>?{7 approved documents present}>[rollout|stop]
+B:[Django]>D:[Managed PostgreSQL|Object Storage]
+B:[scheduler every minute]>[reconcile payments|deliver notifications|retry failed receipts]
+B:[scheduler daily]>[retention/anonymization]
+
+R:[Manager + create_payment_link]>A:[admin create payment link]>X:[Alfa register]
+X:[Alfa callback + secret]>B:[server-to-server status]>D:[Payment+Order journal]
+R:[Accountant + reconcile_payment]>A:[manual status refresh]>X:[Alfa status]
+R:[Refund operator]>A:[retry failed refund]>B:[read provider refunded amount]
+?{already refunded}>D:[reconcile without resend]
+?{not refunded}>X:[refund.do]
+
+?{paid && fiscal mock}>D:[Receipt=validated]
+?{paid && fiscal alfa}>D:[Receipt=pending_confirmation]
+!:[pending_confirmation is not a fiscal success; verify KKT/OFD externally]
+!:[production remains disabled until real legal/company/cloud/bank/KKT data and staging acceptance]
+```
+
+## 6. `zemazap_local_acceptance_2026_08_23`
+
+```text
+B:[Playwright]>[Next :3100 + Django :8100 + disposable SQLite]
+B:[E2E]>[catalog/cart request|standalone request|favorites persistence/remove|admin handoff/login|payment-return safety]
+D:[frontend catalog definitions]>[types+helpers only]
+D:[catalog products]>[Django API; demo seed only for local/E2E]
+D:[favorites]>[localStorage current browser only; MVP decision]
+
+B:[portable PostgreSQL 18.6 :55432 loopback-only]>D:[UTF8 zemazap_rehearsal]
+B:[Django acceptance]>[migrations|checks|full backend suite|idempotent RBAC bootstrap]
+B:[operations rehearsal]>[scheduler once|retention dry-run|external delivery disabled]
+B:[pg_dump]>D:[custom-format backup]>B:[pg_restore]>D:[verified 12 parts+5 roles]
+!:[no Docker, no Windows service, no production credentials/data]
 ```

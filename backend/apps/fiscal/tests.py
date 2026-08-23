@@ -72,6 +72,25 @@ class FiscalReceiptTests(TestCase):
         self.assertEqual(order.status, Order.Status.PAID)
         self.assertEqual(FiscalReceipt.objects.filter(payment=payment).count(), 1)
 
+    @override_settings(FISCALIZATION_ENABLED=True, FISCAL_PROVIDER="alfa")
+    def test_alfa_receipt_waits_for_real_provider_confirmation(self):
+        order = self.create_confirmed_order()
+        payment = Payment.objects.create(
+            order=order,
+            provider="alfa",
+            mode="prod",
+            status=Payment.Status.SUCCEEDED,
+            amount_rub=order.total_amount_rub,
+            currency=order.currency,
+            bank_order_id="alfa-fiscal-pending",
+            idempotency_key="alfa-fiscal-pending",
+        )
+
+        receipt = create_test_sale_receipt_for_payment(payment)
+
+        self.assertEqual(receipt.status, FiscalReceipt.Status.PENDING_CONFIRMATION)
+        self.assertEqual(receipt.fiscal_number, "")
+
     @override_settings(FISCALIZATION_ENABLED=True, FISCAL_PROVIDER="mock")
     def test_successful_refund_creates_refund_receipt(self):
         from apps.refunds.services import create_refund, process_refund

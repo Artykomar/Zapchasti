@@ -24,9 +24,12 @@ class FiscalReceiptAdmin(admin.ModelAdmin):
     inlines = [FiscalReceiptItemInline, FiscalReceiptEventInline]
     actions = ["retry_failed_receipts"]
 
-    @admin.display(boolean=True, description="Оплата прошла, чек не пробит")
+    @admin.display(boolean=True, description="Оплата прошла, чек требует подтверждения")
     def critical_state(self, obj):
-        return obj.payment.status == "succeeded" and obj.status == FiscalReceipt.Status.FAILED
+        return obj.payment.status == "succeeded" and obj.status in {
+            FiscalReceipt.Status.FAILED,
+            FiscalReceipt.Status.PENDING_CONFIRMATION,
+        }
 
     @admin.action(description="Retry selected failed receipts")
     def retry_failed_receipts(self, request, queryset):

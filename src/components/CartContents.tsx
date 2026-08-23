@@ -122,8 +122,8 @@ export default function CartContents({ maxUrl = "" }: { maxUrl?: string }) {
         {items.length > 0 ? (
           <div className="cart-list">
             {items.map((item) => (
-              <article key={item.id} className="cart-item">
-                <div>
+              <article key={item.id} className="cart-item cart-item--editable">
+                <div className="cart-item__details">
                   <h3>
                     <Link href={getProductPath(item)}>{item.name}</Link>
                   </h3>
@@ -131,19 +131,21 @@ export default function CartContents({ maxUrl = "" }: { maxUrl?: string }) {
                     {item.brand} {item.model}, арт. {item.article}
                   </p>
                 </div>
-                <div className="quantity-control" aria-label={`Количество ${item.name}`}>
-                  <button type="button" onClick={() => updateQuantity(item.id, -1)} aria-label="Уменьшить">
-                    <Minus size={16} aria-hidden="true" />
-                  </button>
-                  <span>{item.quantity}</span>
-                  <button type="button" onClick={() => updateQuantity(item.id, 1)} aria-label="Увеличить">
-                    <Plus size={16} aria-hidden="true" />
+                <div className="cart-item__actions">
+                  <div className="quantity-control" aria-label={`Количество ${item.name}`}>
+                    <button type="button" onClick={() => updateQuantity(item.id, -1)} aria-label="Уменьшить">
+                      <Minus size={16} aria-hidden="true" />
+                    </button>
+                    <span>{item.quantity}</span>
+                    <button type="button" onClick={() => updateQuantity(item.id, 1)} aria-label="Увеличить">
+                      <Plus size={16} aria-hidden="true" />
+                    </button>
+                  </div>
+                  <strong className="cart-item__price">{formatPrice(item.price * item.quantity)}</strong>
+                  <button type="button" className="icon-action" onClick={() => removeItem(item.id)} aria-label="Удалить">
+                    <Trash2 size={17} aria-hidden="true" />
                   </button>
                 </div>
-                <strong>{formatPrice(item.price * item.quantity)}</strong>
-                <button type="button" className="icon-action" onClick={() => removeItem(item.id)} aria-label="Удалить">
-                  <Trash2 size={17} aria-hidden="true" />
-                </button>
               </article>
             ))}
           </div>
@@ -186,7 +188,7 @@ export default function CartContents({ maxUrl = "" }: { maxUrl?: string }) {
             type="checkbox"
             checked={privacyAccepted}
             onChange={(event) => setPrivacyAccepted(event.target.checked)}
-        />
+          />
           <span>
             Согласен на обработку персональных данных по{" "}
             <Link href="/personal-data-consent">согласию</Link> и{" "}

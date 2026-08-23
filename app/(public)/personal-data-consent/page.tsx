@@ -1,8 +1,18 @@
+import { PublishedLegalDocument } from "@/src/components/PublishedLegalDocument";
+import { getPublishedLegalDocument } from "@/src/server/django/siteSettings";
 import { siteConfig } from "@/src/server/siteConfig";
 
-export default function PersonalDataConsentPage() {
+export const dynamic = "force-dynamic";
+
+export default async function PersonalDataConsentPage() {
+  const document = await getPublishedLegalDocument("privacy_consent");
+
   return (
     <main className="page-shell">
+      {document ? (
+        <PublishedLegalDocument document={document} />
+      ) : (
+        <>
       <section className="page-heading">
         <p className="eyebrow">Согласие на обработку персональных данных</p>
         <h1>Согласие для заявок и корзины-заявки</h1>
@@ -25,6 +35,8 @@ export default function PersonalDataConsentPage() {
           отдельный текст.
         </p>
       </section>
+        </>
+      )}
     </main>
   );
 }

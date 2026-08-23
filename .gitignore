@@ -23,5 +23,7 @@ data/*.sqlite-*
 data/*.db
 *.log
 tsconfig.tsbuildinfo
+playwright-report/
+test-results/
 .DS_Store
 Thumbs.db

@@ -155,7 +155,7 @@ def deliver_notification(delivery: NotificationDelivery) -> NotificationDelivery
     return delivery
 
 
-def notify_manager_about_request(customer_request: CustomerRequest) -> None:
+def notify_manager_about_request(customer_request: CustomerRequest, *, deliver_immediately: bool = False) -> None:
     deliveries = []
     manager_email = getattr(settings, "ZEMAZAP_MANAGER_EMAIL", "")
     if manager_email:
@@ -168,5 +168,6 @@ def notify_manager_about_request(customer_request: CustomerRequest) -> None:
         deliveries.append(
             _delivery_for_request(customer_request, NotificationDelivery.Channel.TELEGRAM, "manager-telegram")
         )
-    for delivery in deliveries:
-        deliver_notification(delivery)
+    if deliver_immediately:
+        for delivery in deliveries:
+            deliver_notification(delivery)

@@ -18,6 +18,7 @@ services:
     networks: [backend]
 
   django:
+    image: zemazap-backend:local
     build:
       context: .
       dockerfile: backend/Dockerfile
@@ -37,6 +38,20 @@ services:
       retries: 10
     networks: [backend, edge]
 
+  scheduler:
+    image: zemazap-backend:local
+    restart: unless-stopped
+    entrypoint: ["python", "backend/manage.py", "run_operations_scheduler"]
+    env_file: [backend/.env]
+    environment:
+      DJANGO_DEBUG: "false"
+      DATABASE_URL: postgresql://${POSTGRES_USER:-zemazap}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-zemazap}
+      DATABASE_SSL_REQUIRE: "false"
+    depends_on:
+      django:
+        condition: service_healthy
+    networks: [backend, edge]
+
   frontend:
     build:
       context: .
@@ -53,8 +68,20 @@ services:
       interval: 15s
       timeout: 5s
       retries: 10
+    networks: [edge]
+
+  caddy:
+    image: caddy:2.10.2-alpine@sha256:4c6e91c6ed0e2fa03efd5b44747b625fec79bc9cd06ac5235a779726618e530d
+    restart: unless-stopped
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      django:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:8080:8080"
     networks: [edge]
 
 volumes:

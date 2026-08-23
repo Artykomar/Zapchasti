@@ -119,13 +119,11 @@ class CustomerRequestCreateSerializer(serializers.ModelSerializer):
         request_context = self.context.get("request")
         consent_ip = get_request_ip(request_context) or None
         consent_user_agent = request_context.META.get("HTTP_USER_AGENT", "")[:300] if request_context else ""
-        validated_data.setdefault(
-            "privacy_policy_version",
-            getattr(settings, "ZEMAZAP_PRIVACY_POLICY_VERSION", "draft-2026-08-15"),
+        validated_data["privacy_policy_version"] = getattr(
+            settings, "ZEMAZAP_PRIVACY_POLICY_VERSION", "draft-2026-08-15"
         )
-        validated_data.setdefault(
-            "privacy_consent_version",
-            getattr(settings, "ZEMAZAP_PRIVACY_CONSENT_VERSION", "draft-2026-08-15"),
+        validated_data["privacy_consent_version"] = getattr(
+            settings, "ZEMAZAP_PRIVACY_CONSENT_VERSION", "draft-2026-08-15"
         )
         validated_data.setdefault("consent_source", validated_data["source"])
         validated_data["consent_accepted_at"] = timezone.now()

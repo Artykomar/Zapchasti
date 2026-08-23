@@ -1,0 +1,12 @@
+:8080 {
+	encode zstd gzip
+
+	@django path /admin* /static* /media* /api/payments/* /api/imports/*
+	handle @django {
+		reverse_proxy django:8000
+	}
+
+	handle {
+		reverse_proxy frontend:3000
+	}
+}

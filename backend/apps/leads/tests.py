@@ -74,6 +74,30 @@ class CustomerRequestApiTests(TestCase):
         self.assertEqual(customer_request.consent_ip, "203.0.113.10")
         self.assertEqual(customer_request.consent_user_agent, "Zemazap test browser")
 
+    @override_settings(
+        ZEMAZAP_PRIVACY_POLICY_VERSION="server-policy-v3",
+        ZEMAZAP_PRIVACY_CONSENT_VERSION="server-consent-v3",
+    )
+    def test_request_api_does_not_trust_client_consent_versions(self):
+        response = self.client.post(
+            "/api/requests/",
+            data={
+                "customerName": "Артём",
+                "contact": "+7 999 111-22-33",
+                "requestText": "Нужна фара",
+                "source": "request_form",
+                "privacyAccepted": True,
+                "privacyPolicyVersion": "attacker-policy",
+                "privacyConsentVersion": "attacker-consent",
+            },
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        customer_request = CustomerRequest.objects.get()
+        self.assertEqual(customer_request.privacy_policy_version, "server-policy-v3")
+        self.assertEqual(customer_request.privacy_consent_version, "server-consent-v3")
+
     def test_request_api_rejects_overlong_text(self):
         response = self.client.post(
             "/api/requests/",

@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "e2e": "playwright test",
+    "e2e:headed": "playwright test --headed",
+    "e2e:install": "playwright install chromium"
   },
   "dependencies": {
     "lucide-react": "latest",
@@ -20,6 +23,7 @@
     "sharp": "^0.35.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",

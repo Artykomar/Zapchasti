@@ -12,6 +12,16 @@ services:
       retries: 10
     networks: [backend, edge]
 
+  scheduler:
+    image: cr.yandex/${YC_REGISTRY_ID:?Set YC_REGISTRY_ID}/zemazap-backend:${IMAGE_TAG:?Set IMAGE_TAG}
+    restart: unless-stopped
+    entrypoint: ["python", "backend/manage.py", "run_operations_scheduler"]
+    env_file: [/etc/zemazap/backend.env]
+    depends_on:
+      django:
+        condition: service_healthy
+    networks: [backend, edge]
+
   frontend:
     image: cr.yandex/${YC_REGISTRY_ID:?Set YC_REGISTRY_ID}/zemazap-frontend:${IMAGE_TAG:?Set IMAGE_TAG}
     restart: unless-stopped
@@ -26,8 +36,20 @@ services:
       interval: 15s
       timeout: 5s
       retries: 10
+    networks: [edge]
+
+  caddy:
+    image: caddy:2.10.2-alpine@sha256:4c6e91c6ed0e2fa03efd5b44747b625fec79bc9cd06ac5235a779726618e530d
+    restart: unless-stopped
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      django:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
     ports:
-      - "3000:3000"
+      - "8080:8080"
     networks: [edge]
 
 networks:
