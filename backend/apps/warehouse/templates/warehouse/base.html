@@ -1,0 +1,22 @@
+{% load static %}<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>{% block document_title %}{{ title }} · Склад Zemazap{% endblock %}</title>
+<script src="{% static 'warehouse/theme.js' %}"></script>
+<link rel="stylesheet" href="{% static 'warehouse/workspace.css' %}"></head>
+<body><a class="skip" href="#main">К содержимому</a><div class="workspace">
+<aside class="sidebar"><a class="brand" href="{% url 'warehouse:overview' %}"><span class="brand-mark">Z</span>zemazap<span class="brand-dot">.</span></a>
+<div class="workspace-label">{% block workspace_label %}УПРАВЛЕНИЕ СКЛАДОМ{% endblock %}</div>
+{% block sidebar_nav %}<nav aria-label="Разделы склада">
+<a {% if section == 'overview' %}class="active" aria-current="page"{% endif %} href="/admin/warehouse/"><span class="nav-icon">01</span>Рабочий стол</a>
+<a {% if section == 'parts' %}class="active" aria-current="page"{% endif %} href="/admin/warehouse/parts/"><span class="nav-icon">02</span>Детали и остатки</a>
+<a {% if section == 'purchases' %}class="active" aria-current="page"{% endif %} href="/admin/warehouse/purchases/"><span class="nav-icon">03</span>Закупки</a>
+<a {% if section == 'orders' %}class="active" aria-current="page"{% endif %} href="/admin/warehouse/orders/"><span class="nav-icon">04</span>Заказы покупателей</a>
+<a {% if section == 'shipments' %}class="active" aria-current="page"{% endif %} href="/admin/warehouse/shipments/"><span class="nav-icon">05</span>Доставка СДЭК</a>
+<a {% if section == 'activity' %}class="active" aria-current="page"{% endif %} href="/admin/warehouse/activity/"><span class="nav-icon">06</span>Журнал операций</a>
+</nav>{% endblock %}<div class="sidebar-bottom">{% block sidebar_bottom %}<p>Единая база магазина.<br>Каждое движение — в журнале.</p><a href="{% url 'admin:index' %}">Все разделы админки ↗</a>{% endblock %}</div></aside>
+<div class="main"><header class="topbar"><span>{% block workspace_name %}Операционный кабинет{% endblock %} <span class="separator">/</span> {{ title }}</span><div class="account">{% include 'warehouse/theme_toggle.html' %}<span class="user-dot"></span>{{ request.user.get_username }}<form method="post" action="{% url 'admin:logout' %}">{% csrf_token %}<button class="link-button" type="submit">Выйти</button></form></div></header>
+<main id="main"><div class="page-heading"><div><p class="eyebrow">{% block eyebrow %}ZEMAZAP / СКЛАД{% endblock %}</p><h1>{{ title }}</h1><p class="muted">{% block subtitle %}Детали, закупки и отправления в одном месте.{% endblock %}</p></div>{% block actions %}{% endblock %}</div>
+{% for message in messages %}<div role="status" class="notice {{ message.tags }}">{{ message }}</div>{% endfor %}
+{% block content %}{% endblock %}
+<footer class="footer">Zemazap · Внутренний кабинет <span>{% block footer_note %}Остатки склада учитываются отдельно от предложений поставщиков.{% endblock %}</span></footer>
+</main></div></div><script src="{% static 'warehouse/workspace.js' %}" defer></script></body></html>

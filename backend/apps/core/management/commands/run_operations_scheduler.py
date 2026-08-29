@@ -43,6 +43,7 @@ class Command(BaseCommand):
             self._run_command("reconcile_pending_payments")
             self._run_command("retry_failed_receipts")
             self._run_command("retry_notifications")
+            self._run_command("sync_cdek_shipments")
 
             if started_at >= next_retention_at:
                 self._run_command("anonymize_personal_data")

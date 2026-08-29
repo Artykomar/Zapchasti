@@ -15,15 +15,20 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
+from django.conf import settings
 from django.urls import include, path
 
 from apps.core.views import PublicSiteSettingsAPIView
 from apps.catalog.views import CatalogDetailAPIView, CatalogListAPIView
 from apps.imports.views import PriceImportAPIView
 from apps.leads.views import CustomerRequestCreateAPIView
-from .views import health
+from apps.warehouse.views import owner_dashboard
+from .views import admin_entry, health
 
 urlpatterns = [
+    path("admin/owner/", owner_dashboard, name="owner-dashboard"),
+    path("admin/warehouse/", include("apps.warehouse.urls")),
+    path("admin/", admin_entry, name="admin-entry"),
     path("admin/", admin.site.urls),
     path("api/health", health, name="health-no-slash"),
     path("api/health/", health, name="health"),
@@ -43,3 +48,5 @@ urlpatterns = [
 admin.site.site_header = "Zemazap Admin"
 admin.site.site_title = "Zemazap Admin"
 admin.site.index_title = "Управление магазином"
+admin.site.site_url = settings.ZEMAZAP_SITE_URL
+admin.site.index_template = "warehouse/admin_index.html"

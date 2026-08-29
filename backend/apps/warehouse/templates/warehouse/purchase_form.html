@@ -1,0 +1,12 @@
+{% extends 'warehouse/base.html' %}
+{% block subtitle %}Сначала создайте черновик. Перевод в ожидание поставки не отправляет письмо и не оплачивает счёт.{% endblock %}
+{% block actions %}<a class="button" href="{% url 'warehouse:purchases' %}">← Закупки</a>{% endblock %}
+{% block content %}<form method="post">{% csrf_token %}<section class="panel"><div class="panel-heading"><h2>Поставщик и сроки</h2>{% if perms.catalog.add_supplier %}<a class="text-link" href="{% url 'admin:catalog_supplier_add' %}" target="_blank" rel="noopener">Добавить поставщика ↗</a>{% endif %}</div><div class="panel-body form-grid">{% include 'warehouse/fields.html' %}</div></section><section class="panel section-title"><div class="panel-heading"><h2>Позиции закупки</h2><span class="help">Пустые строки пропускаются</span></div>{{ formset.management_form }}{{ formset.non_form_errors }}<div class="table-scroll"><table><thead><tr><th>Деталь</th><th>Количество</th><th>Цена за шт., ₽</th><th>Убрать</th></tr></thead><tbody id="purchase-lines">{% for line in formset %}<tr><td class="field">{{ line.id }}{{ line.part }}{{ line.part.errors }}{{ line.non_field_errors }}</td><td class="field">{{ line.quantity }}{{ line.quantity.errors }}</td><td class="field">{{ line.unit_cost_rub }}{{ line.unit_cost_rub.errors }}</td><td>{{ line.DELETE }}</td></tr>{% endfor %}</tbody></table></div></section>
+<template id="purchase-empty-row"><tr>
+<td class="field">{{ formset.empty_form.id }}{{ formset.empty_form.part }}</td>
+<td class="field">{{ formset.empty_form.quantity }}</td>
+<td class="field">{{ formset.empty_form.unit_cost_rub }}</td>
+<td>{{ formset.empty_form.DELETE }}</td>
+</tr></template>
+<div class="form-actions"><button type="button" class="button" data-add-purchase-line>+ Добавить строку</button><span class="help">До 50 позиций в закупке</span></div>
+<div class="form-actions"><button class="button primary" type="submit">Создать закупку</button><a class="button" href="{% url 'warehouse:purchases' %}">Отмена</a></div></form>{% endblock %}

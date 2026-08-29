@@ -37,6 +37,14 @@ ROLE_PERMISSIONS = {
         "view_manufacturer",
         "view_supplier",
     ],
+    "warehouse_manager": [
+        "view_stockitem", "view_stockmovement", "view_warehouseevent",
+        "view_purchaseorder", "view_purchaseline", "view_fulfillment", "view_shipment",
+        "manage_inventory", "process_purchases", "process_fulfillment", "manage_shipments",
+        "view_part", "add_part", "change_part", "view_brand", "view_category",
+        "view_manufacturer", "view_supplier", "add_supplier", "change_supplier",
+        "view_order", "view_order_pii",
+    ],
     "accountant": [
         "view_order",
         "view_payment",

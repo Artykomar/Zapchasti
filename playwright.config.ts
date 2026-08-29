@@ -74,6 +74,7 @@ export default defineConfig({
       env: {
         ...inheritedEnvironment,
         NEXT_TELEMETRY_DISABLED: "1",
+        ZEMAZAP_NEXT_DIST_DIR: ".next-e2e",
         ZEMAZAP_DJANGO_API_URL: backendUrl,
         ZEMAZAP_DJANGO_PUBLIC_URL: backendUrl,
         ZEMAZAP_SITE_URL: frontendUrl,

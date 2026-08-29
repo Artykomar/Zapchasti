@@ -170,3 +170,26 @@ D:[backup]>B:[restore + rollback rehearsal]
 !:[AI agent cannot approve legal/accounting facts or authorize launch]
 !:[secrets/PII/dumps stay out of Git, chat, screenshots and logs]
 ```
+
+## 8. `zemazap_warehouse_flow_2026_08_28`
+
+```text
+R:[warehouse_manager + staff]>P:[/admin/login]>P:[/admin/warehouse]
+P:[parts]>{catalogue fields,sale offer,location,min stock,unit weight}
+D:[PriceOffer.stock text] != D:[StockItem.on_hand,reserved integers]
+A:[adjust stock + reason + operation UUID]>B:[atomic quantity guard]>D:[StockMovement]
+P:[purchases]>D:[PurchaseOrder + PurchaseLine]>A:[agree supply]>[ordered]
+A:[partial/full receipt + operation UUID]>B:[atomic receipt bound]>D:[StockItem + StockMovement]
+P:[orders]>?{confirmed/paid && linked parts && available stock}>A:[reserve]
+A:[pack]>?{paid && unchanged reserved quantities}>D:[Fulfillment.packed]
+P:[shipment draft]>{recipient,city/PVZ,address,weight,dimensions}
+?{CDEK_ENABLED && credentials && sender}>A:[quote delivery]
+?{paid && packed && explicit confirmation}>B:[commit submitting]>X:[CDEK POST orders]
+?{timeout/uncertain}>B:[reconcile UUID/im_number; never blind resend]
+?{carrier registration confirmed}>D:[CDEK number + status]>A:[request/download PDF]
+A:[actual handover confirmation]>?{prod CDEK number && paid && packed}>B:[atomic dispatch]
+B:[dispatch]>D:[on_hand minus qty,reserved minus qty,StockMovement,Fulfillment.dispatched]
+B:[existing scheduler]>B:[bounded read-only CDEK status reconciliation]
+!:[warehouse actions never create payments/refunds or overwrite order payment status]
+!:[CDEK disabled by default; live acceptance and recipient retention integration pending]
+```

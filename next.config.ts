@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  distDir: process.env.ZEMAZAP_NEXT_DIST_DIR?.trim() || ".next",
   poweredByHeader: false,
   allowedDevOrigins: ["127.0.0.1", "localhost"],
   reactStrictMode: true,

@@ -1,6 +1,6 @@
 # TODO: запуск Zemazap
 
-Дата обновления: 2026-08-23.
+Дата обновления: 2026-08-28.
 
 Активная release-ветка — `main`. Устаревшая рабочая копия `Zapchasti-master`
 удалена. Здесь перечислена только незавершенная работа; реализованные изменения и
@@ -36,6 +36,15 @@
 
 ## P1 — обязательная операционная приемка
 
+- [ ] Принять [кабинет склада](docs/warehouse-manager-runbook.md) на реальных
+  артикулах и PostgreSQL: инвентаризация, частичная приёмка, конкурирующие резервы,
+  сборка, списание и права `warehouse_manager`.
+- [ ] Получить ключи и профиль отправителя СДЭК; проверить тестовый договор,
+  тарифы/ПВЗ, регистрацию, PDF, сверку после тайм-аута, отмену и невручение.
+  До этого оставить `CDEK_ENABLED=false`; production-вызовы не проверены.
+- [ ] Утвердить хранение/удаление данных получателей СДЭК и включить новые
+  отправления в retention-процесс перед передачей реальных персональных данных.
+
 - [ ] Настроить alerts по 5xx, health, scheduler, БД, payment/fiscal failures,
   pending receipts и notification backlog; назначить ответственных.
 - [ ] Проверить SMTP/Telegram на staging, PII-safe logging и доставку из очереди.
@@ -65,7 +74,7 @@
 .\.venv\Scripts\python.exe backend\manage.py check --deploy
 .\.venv\Scripts\python.exe backend\manage.py makemigrations --check --dry-run
 .\.venv\Scripts\python.exe backend\manage.py check_launch_content
-.\.venv\Scripts\python.exe backend\manage.py test apps.core apps.catalog apps.customers apps.leads apps.orders apps.payments apps.fiscal apps.refunds apps.imports apps.notifications
+.\.venv\Scripts\python.exe backend\manage.py test apps.core apps.catalog apps.customers apps.leads apps.orders apps.payments apps.fiscal apps.refunds apps.imports apps.notifications apps.warehouse
 $env:PYTHONUTF8 = "1"
 .\.venv\Scripts\python.exe -m pip_audit -r backend\requirements.txt
 npm.cmd run typecheck
