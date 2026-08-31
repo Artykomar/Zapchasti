@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     "apps.refunds",
     "apps.imports",
     "apps.notifications",
+    "apps.warehouse",
 ]
 
 MIDDLEWARE = [
@@ -86,6 +87,15 @@ MIDDLEWARE = [
 ]
 
 ADMIN_LOGIN_RATE_LIMIT = env_int("ADMIN_LOGIN_RATE_LIMIT", 10)
+CDEK_ENABLED = env_bool("CDEK_ENABLED", False)
+CDEK_MODE = os.getenv("CDEK_MODE", "test").strip().lower()
+CDEK_CLIENT_ID = os.getenv("CDEK_CLIENT_ID", "")
+CDEK_CLIENT_SECRET = os.getenv("CDEK_CLIENT_SECRET", "")
+CDEK_TIMEOUT_SECONDS = env_int("CDEK_TIMEOUT_SECONDS", 15)
+CDEK_SENDER_NAME = os.getenv("CDEK_SENDER_NAME", "")
+CDEK_SENDER_PHONE = os.getenv("CDEK_SENDER_PHONE", "")
+CDEK_SENDER_CITY_CODE = env_int("CDEK_SENDER_CITY_CODE", 0)
+CDEK_SENDER_ADDRESS = os.getenv("CDEK_SENDER_ADDRESS", "")
 ADMIN_LOGIN_LOCKOUT_SECONDS = env_int("ADMIN_LOGIN_LOCKOUT_SECONDS", 900)
 
 ROOT_URLCONF = "config.urls"
@@ -93,7 +103,7 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [

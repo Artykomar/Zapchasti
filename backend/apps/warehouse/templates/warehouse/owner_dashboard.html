@@ -1,0 +1,147 @@
+{% extends 'warehouse/base.html' %}
+
+{% block document_title %}{{ title }} · Владелец Zemazap{% endblock %}
+{% block workspace_label %}КАБИНЕТ ВЛАДЕЛЬЦА{% endblock %}
+{% block workspace_name %}Владелец{% endblock %}
+{% block eyebrow %}ZEMAZAP / ВЛАДЕЛЕЦ{% endblock %}
+{% block subtitle %}Заявки, деньги, остатки и доставка на одном экране.{% endblock %}
+{% block footer_note %}Активные роли сейчас: покупатель и владелец-администратор. Остальные роли сохранены для роста компании.{% endblock %}
+
+{% block sidebar_nav %}
+<nav aria-label="Разделы кабинета владельца">
+  <a class="active" aria-current="page" href="{% url 'owner-dashboard' %}"><span class="nav-icon">01</span>Центр управления</a>
+  <a href="{% url 'admin:leads_customerrequest_changelist' %}"><span class="nav-icon">02</span>Заявки клиентов</a>
+  <a href="{% url 'warehouse:orders' %}"><span class="nav-icon">03</span>Заказы</a>
+  <a href="{% url 'admin:payments_payment_changelist' %}"><span class="nav-icon">04</span>Платежи</a>
+  <a href="{% url 'warehouse:overview' %}"><span class="nav-icon">05</span>Склад и закупки</a>
+  <a href="{% url 'warehouse:shipments' %}"><span class="nav-icon">06</span>Доставка СДЭК</a>
+  <a href="{% url 'admin:refunds_refund_changelist' %}"><span class="nav-icon">07</span>Возвраты</a>
+  <a href="{% url 'admin:index' %}"><span class="nav-icon">08</span>Все настройки</a>
+</nav>
+{% endblock %}
+
+{% block sidebar_bottom %}
+<p>Единая точка контроля малого магазина.<br>Подробные формы открываются из очередей.</p>
+<a href="{{ storefront_url }}" target="_blank" rel="noopener">Открыть витрину ↗</a>
+{% endblock %}
+
+{% block actions %}
+<div class="actions-row owner-heading-actions">
+  <a class="button" href="{{ storefront_url }}" target="_blank" rel="noopener">Открыть витрину</a>
+  <a class="button primary" href="{% url 'admin:index' %}">Все разделы админки</a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="metrics owner-metrics">
+  <a class="metric" href="{% url 'admin:leads_customerrequest_changelist' %}?status=new">
+    <span>Новые заявки</span><strong>{{ new_requests_count }}</strong><small>Принять в работу ↗</small>
+  </a>
+  <a class="metric" href="{% url 'admin:orders_order_changelist' %}?status__exact=draft">
+    <span>Заказы к подтверждению</span><strong>{{ orders_to_confirm_count }}</strong><small>Проверить состав и цену ↗</small>
+  </a>
+  <a class="metric" href="{% url 'admin:payments_payment_changelist' %}">
+    <span>Платежи требуют внимания</span><strong>{{ payments_attention_count }}</strong><small>Черновики, ожидание и ошибки ↗</small>
+  </a>
+  <a class="metric" href="{% url 'warehouse:orders' %}?status=unprocessed">
+    <span>Оплачено, не отгружено</span><strong>{{ paid_to_fulfill_count }}</strong><small>Передать в сборку ↗</small>
+  </a>
+  <a class="metric" href="{% url 'warehouse:parts' %}?status=low">
+    <span>Низкий остаток</span><strong>{{ low_stock_count }}</strong><small>Проверить физический склад ↗</small>
+  </a>
+  <a class="metric" href="{% url 'warehouse:purchases' %}">
+    <span>Закупки в работе</span><strong>{{ purchases_attention_count }}</strong><small>Ожидают приёмки ↗</small>
+  </a>
+  <a class="metric" href="{% url 'warehouse:shipments' %}">
+    <span>СДЭК требует внимания</span><strong>{{ shipments_attention_count }}</strong><small>Сверка или исправление ↗</small>
+  </a>
+  <a class="metric" href="{% url 'admin:refunds_refund_changelist' %}">
+    <span>Возвраты в работе</span><strong>{{ refunds_attention_count }}</strong><small>Проверить решение ↗</small>
+  </a>
+</div>
+
+<section class="owner-readiness" aria-label="Готовность сервисов">
+  <a href="{% url 'admin:core_legalentitysettings_changelist' %}" class="readiness-item">
+    <span class="status-dot {% if legal_entity_ready %}ready{% else %}warning{% endif %}"></span>
+    <span><strong>Реквизиты продавца</strong><small>{% if legal_entity_ready %}Готовы{% else %}Не готовы к production{% endif %}</small></span>
+  </a>
+  <a href="{% url 'admin:core_legaldocument_changelist' %}" class="readiness-item">
+    <span class="status-dot {% if published_legal_documents == required_legal_documents %}ready{% else %}warning{% endif %}"></span>
+    <span><strong>Юридические документы</strong><small>{{ published_legal_documents }} из {{ required_legal_documents }} опубликовано</small></span>
+  </a>
+  <a href="{% url 'warehouse:parts' %}?status=untracked" class="readiness-item">
+    <span class="status-dot {% if untracked_stock_count == 0 %}ready{% else %}warning{% endif %}"></span>
+    <span><strong>Физический склад</strong><small>{{ untracked_stock_count }} деталей без учёта остатка</small></span>
+  </a>
+  <a href="{% url 'admin:payments_payment_changelist' %}" class="readiness-item">
+    <span class="status-dot {% if payments_enabled %}ready{% else %}warning{% endif %}"></span>
+    <span><strong>Платежи</strong><small>{% if payments_enabled %}Включены · {{ payments_mode }}{% else %}Выключены{% endif %}</small></span>
+  </a>
+  <a href="{% url 'admin:fiscal_fiscalreceipt_changelist' %}" class="readiness-item">
+    <span class="status-dot {% if fiscalization_enabled %}ready{% else %}warning{% endif %}"></span>
+    <span><strong>Фискализация</strong><small>{% if fiscalization_enabled %}Включена{% else %}Выключена{% endif %}</small></span>
+  </a>
+  <a href="{% url 'warehouse:shipments' %}" class="readiness-item">
+    <span class="status-dot {% if cdek_mode_label != 'API выключен' %}ready{% else %}warning{% endif %}"></span>
+    <span><strong>СДЭК</strong><small>{{ cdek_mode_label }}</small></span>
+  </a>
+</section>
+
+<div class="owner-grid">
+  <section class="panel">
+    <div class="panel-heading"><div><p class="eyebrow">ПРОДАЖИ</p><h2>Заявки клиентов</h2></div><a class="text-link" href="{% url 'admin:leads_customerrequest_changelist' %}">Все заявки →</a></div>
+    <div class="table-scroll"><table><thead><tr><th>Клиент</th><th>Состав</th><th>Статус</th></tr></thead><tbody>
+      {% for item in request_queue %}<tr>
+        <td><a class="row-link" href="{% url 'admin:leads_customerrequest_change' item.pk %}">{{ item.customer_name }}</a><small class="subline">{{ item.contact }}</small></td>
+        <td>{{ item.items.all|length }} поз.</td>
+        <td><span class="badge {% if item.status == 'new' %}amber{% endif %}">{{ item.owner_status_label }}</span></td>
+      </tr>{% empty %}<tr><td colspan="3" class="empty">Активных заявок нет.</td></tr>{% endfor %}
+    </tbody></table></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-heading"><div><p class="eyebrow">ЗАКАЗЫ</p><h2>Текущая обработка</h2></div><a class="text-link" href="{% url 'warehouse:orders' %}">Все заказы →</a></div>
+    <div class="table-scroll"><table><thead><tr><th>Заказ</th><th>Сумма</th><th>Статус</th></tr></thead><tbody>
+      {% for item in order_queue %}<tr>
+        <td><a class="row-link" href="{% url 'warehouse:order' item.pk %}">№ {{ item.pk }} · {{ item.customer_name }}</a><small class="subline">{{ item.contact }}</small></td>
+        <td>{{ item.total_amount_rub }} ₽</td>
+        <td><span class="badge {% if item.status == 'paid' %}green{% elif item.status == 'failed' %}red{% else %}amber{% endif %}">{{ item.owner_status_label }}</span></td>
+      </tr>{% empty %}<tr><td colspan="3" class="empty">Заказов в работе нет.</td></tr>{% endfor %}
+    </tbody></table></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-heading"><div><p class="eyebrow">ДЕНЬГИ</p><h2>Платежи</h2></div><a class="text-link" href="{% url 'admin:payments_payment_changelist' %}">Все платежи →</a></div>
+    <div class="table-scroll"><table><thead><tr><th>Платёж</th><th>Сумма</th><th>Статус</th></tr></thead><tbody>
+      {% for item in payment_queue %}<tr>
+        <td><a class="row-link" href="{% url 'admin:payments_payment_change' item.pk %}">№ {{ item.pk }} · заказ {{ item.order_id }}</a><small class="subline">{{ item.provider }} · {{ item.mode }}</small></td>
+        <td>{{ item.amount_rub }} {{ item.currency }}</td>
+        <td><span class="badge {% if item.status == 'failed' %}red{% else %}amber{% endif %}">{{ item.owner_status_label }}</span></td>
+      </tr>{% empty %}<tr><td colspan="3" class="empty">Платежей, требующих внимания, нет.</td></tr>{% endfor %}
+    </tbody></table></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-heading"><div><p class="eyebrow">ВОЗВРАТЫ</p><h2>Возвраты денег</h2></div><a class="text-link" href="{% url 'admin:refunds_refund_changelist' %}">Все возвраты →</a></div>
+    <div class="table-scroll"><table><thead><tr><th>Возврат</th><th>Сумма</th><th>Статус</th></tr></thead><tbody>
+      {% for item in refund_queue %}<tr>
+        <td><a class="row-link" href="{% url 'admin:refunds_refund_change' item.pk %}">№ {{ item.pk }} · заказ {{ item.order_id }}</a><small class="subline">{{ item.reason }}</small></td>
+        <td>{{ item.amount_rub }} ₽</td>
+        <td><span class="badge {% if item.status == 'failed' %}red{% else %}amber{% endif %}">{{ item.owner_status_label }}</span></td>
+      </tr>{% empty %}<tr><td colspan="3" class="empty">Возвратов в работе нет.</td></tr>{% endfor %}
+    </tbody></table></div>
+  </section>
+</div>
+
+<section class="panel owner-quick-panel">
+  <div class="panel-heading"><div><p class="eyebrow">БЫСТРЫЕ ДЕЙСТВИЯ</p><h2>Управление магазином</h2></div></div>
+  <div class="owner-quick-grid">
+    <a href="{% url 'warehouse:part-new' %}"><strong>Добавить деталь</strong><small>Карточка, предложение и складские параметры</small></a>
+    <a href="{% url 'warehouse:purchase-new' %}"><strong>Создать закупку</strong><small>Поставщик, позиции и ожидаемая дата</small></a>
+    <a href="{% url 'admin:leads_customerrequest_changelist' %}"><strong>Обработать заявки</strong><small>Создать заказ из обращения покупателя</small></a>
+    <a href="{% url 'admin:orders_order_changelist' %}"><strong>Управлять оплатой</strong><small>Подтвердить заказ и сформировать ссылку</small></a>
+    <a href="{% url 'admin:core_sitesettings_changelist' %}"><strong>Настройки сайта</strong><small>Контакты, регион и режим проверки банка</small></a>
+    <a href="{% url 'admin:auth_user_changelist' %}"><strong>Доступ сотрудников</strong><small>Понадобится при расширении команды</small></a>
+  </div>
+</section>
+{% endblock %}

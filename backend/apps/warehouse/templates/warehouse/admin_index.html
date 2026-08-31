@@ -1,0 +1,18 @@
+{% extends 'admin/index.html' %}
+{% block content %}
+{% if user.is_superuser or perms.payments.create_payment_link and perms.refunds.process_refund and perms.warehouse.manage_inventory %}
+<div class="module" style="padding:20px;margin-bottom:24px;border-left:4px solid #c5162e">
+  <h2 style="background:none;color:var(--body-fg);padding:0">Центр управления владельца</h2>
+  <p>Заявки, заказы, платежи, остатки, закупки, возвраты и СДЭК в единой очереди.</p>
+  <a href="{% url 'owner-dashboard' %}" style="font-weight:600">Открыть кабинет владельца →</a>
+</div>
+{% endif %}
+{% if perms.warehouse.view_stockitem %}
+<div class="module" style="padding:20px;margin-bottom:24px;border-left:4px solid #167f86">
+  <h2 style="background:none;color:var(--body-fg);padding:0">Склад Zemazap</h2>
+  <p>Остатки, закупки, сборка заказов и отправления СДЭК.</p>
+  <a href="{% url 'warehouse:overview' %}" style="font-weight:600">Открыть рабочий стол склада →</a>
+</div>
+{% endif %}
+{{ block.super }}
+{% endblock %}

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { siteConfig } from "@/src/server/siteConfig";
+import { themeInitializationScript } from "@/src/components/themePreference";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.siteUrl),
@@ -42,6 +43,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitializationScript }} />
+      </head>
       <body suppressHydrationWarning>{children}</body>
     </html>
   );

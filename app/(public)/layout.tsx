@@ -1,6 +1,8 @@
 import Link from "next/link";
-import { Clock, Heart, MapPin, MessageCircle, Phone } from "lucide-react";
+import { Clock, Heart, LogIn, MapPin, MessageCircle, Phone } from "lucide-react";
+import CookieNotice from "@/src/components/CookieNotice";
 import HeaderCartLink from "@/src/components/HeaderCartLink";
+import ThemeToggle from "@/src/components/ThemeToggle";
 import { hasPublicLegalEntity, siteConfig } from "@/src/server/siteConfig";
 
 // Public contacts, legal details and feature flags are injected at container runtime.
@@ -88,6 +90,11 @@ export default function PublicLayout({
           </nav>
 
           <div className="header-actions">
+            <ThemeToggle />
+            <Link className="admin-login-link" href="/admin/owner/">
+              <LogIn size={18} aria-hidden="true" />
+              <span>войти от имени администратора</span>
+            </Link>
             <Link className="icon-link" href="/izbrannoe" aria-label="Избранное">
               <Heart size={18} aria-hidden="true" />
             </Link>
@@ -114,6 +121,7 @@ export default function PublicLayout({
           {siteConfig.maxUrl ? <a href={siteConfig.maxUrl}>MAX</a> : null}
         </div>
       </footer>
+      <CookieNotice />
     </>
   );
 }

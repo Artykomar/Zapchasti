@@ -157,6 +157,7 @@ class OperationsSchedulerTests(SimpleTestCase):
                 "reconcile_pending_payments",
                 "retry_failed_receipts",
                 "retry_notifications",
+                "sync_cdek_shipments",
                 "anonymize_personal_data",
             ],
         )

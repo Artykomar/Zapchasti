@@ -52,7 +52,7 @@ jobs:
       - run: python backend/manage.py migrate --noinput
       - run: python backend/manage.py check
       - run: python backend/manage.py makemigrations --check --dry-run
-      - run: python backend/manage.py test apps.core apps.catalog apps.customers apps.leads apps.orders apps.payments apps.fiscal apps.refunds apps.imports apps.notifications
+      - run: python backend/manage.py test apps.core apps.catalog apps.customers apps.leads apps.orders apps.payments apps.fiscal apps.refunds apps.imports apps.notifications apps.warehouse
       - name: Production launch checks
         env:
           DJANGO_DEBUG: "false"

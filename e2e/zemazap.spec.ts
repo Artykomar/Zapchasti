@@ -1,6 +1,31 @@
 import { expect, test } from "@playwright/test";
 
 const productName = "Фильтр масляный";
+const cookieNoticeName = "zemazap_cookie_notice";
+
+test.beforeEach(async ({ context }) => {
+  await context.addCookies([
+    {
+      name: cookieNoticeName,
+      value: "acknowledged",
+      url: "http://127.0.0.1:3100"
+    }
+  ]);
+});
+
+test("cookie notice appears on first visit and stays dismissed", async ({ context, page }) => {
+  await context.clearCookies();
+  await page.goto("/");
+
+  const notice = page.getByRole("dialog", { name: "Файлы cookie" });
+  await expect(notice).toBeVisible();
+  await notice.getByRole("button", { name: "Понятно" }).click();
+  await expect(notice).toBeHidden();
+  await expect.poll(async () => (await context.cookies()).some((cookie) => cookie.name === cookieNoticeName)).toBe(true);
+
+  await page.reload();
+  await expect(page.getByRole("dialog", { name: "Файлы cookie" })).toHaveCount(0);
+});
 
 test("customer can find a product and submit a cart request", async ({ page }) => {
   await page.goto("/catalog");
@@ -52,14 +77,29 @@ test("favorites persist in this browser and can be removed", async ({ page }) =>
   await expect(page.getByText("Избранного пока нет")).toBeVisible();
 });
 
-test("admin handoff reaches Django and accepts the disposable E2E account", async ({ page }) => {
-  await page.goto("/admin");
+test("admin handoff and theme stay unified across the storefront and Django", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Включить тёмную тему" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await page.getByRole("link", { name: "войти от имени администратора" }).click();
   await expect(page).toHaveURL(/127\.0\.0\.1:8100\/admin\/login/);
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await page.locator('input[name="username"]').fill("e2e_admin");
   await page.locator('input[name="password"]').fill("zemazap-e2e-only");
   await page.locator('input[type="submit"]').click();
-  await expect(page).toHaveURL(/127\.0\.0\.1:8100\/admin\/$/);
-  await expect(page.locator("body")).toContainText(/Zemazap|Управление магазином/);
+  await expect(page).toHaveURL(/127\.0\.0\.1:8100\/admin\/owner\/$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Центр управления" })).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+
+  await page.goto("http://127.0.0.1:8100/admin/leads/customerrequest/");
+  await expect(page.locator("#nav-sidebar")).toBeVisible();
+  await expect(page.locator('link[href$="warehouse/admin.css"]')).toHaveCount(1);
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await page.getByRole("button", { name: "Включить светлую тему" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+
+  await page.goto("http://127.0.0.1:3100/");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 });
 
 test("payment-return pages never trust the browser redirect", async ({ page }) => {

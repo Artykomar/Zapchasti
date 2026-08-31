@@ -24,13 +24,47 @@ npm.cmd run dev
 
 Docker для локальной разработки и тестирования не нужен.
 
+## Кабинет владельца
+
+`http://127.0.0.1:8000/admin/owner/` — основной рабочий экран владельца: новые
+заявки, заказы, платежи, оплаченные заказы к сборке, низкие остатки, закупки,
+проблемы СДЭК и возвраты. Из очередей открываются существующие безопасные формы
+Django admin и склада. Публичная кнопка входа ведёт прямо сюда; Django показывает
+форму входа или кабинет, если действующая session cookie уже сохранена.
+
+Активная модель доступа сейчас состоит из покупателя без учётной записи и одного
+владельца-superuser. Группы `manager`, `content`, `warehouse_manager`, `accountant`
+и `techadmin` не назначены пользователям, но сохранены для будущего расширения.
+
+Витрина, кабинет владельца, кабинет склада и стандартные страницы Django Admin
+используют одну светлую/тёмную тему. Переключатель находится в шапке каждого
+интерфейса; выбор сохраняется в cookie `zemazap_theme` на один год и действует на
+обоих локальных портах и production-домене.
+
+## Кабинет склада
+
+`http://127.0.0.1:8000/admin/warehouse/` — детали и физические остатки, закупки,
+частичная приёмка, сборка заказов, отправления СДЭК и журнал операций. Вход — через
+существующий Django admin; группа сотрудника — `warehouse_manager` после
+`migrate` и `bootstrap_roles`. [Инструкция для склада и подключения СДЭК](docs/warehouse-manager-runbook.md).
+СДЭК по умолчанию выключен; локальные черновики не отправляются перевозчику.
+
+На публичных страницах при первом посещении показывается уведомление об
+использовании необходимых cookie. После подтверждения оно сохраняет cookie
+`zemazap_cookie_notice` на один год; рекламные и аналитические cookie не заявлены
+и сейчас не устанавливаются приложением. Отдельная необходимая cookie
+`zemazap_theme` хранит только значение `light` или `dark`.
+
+Текущая структура, связи, ограничения и снимок количества записей описаны в
+[отчёте о локальной базе данных](docs/database-structure-report-2026-08-29.md).
+
 ## Проверки
 
 ```powershell
 .\.venv\Scripts\python.exe backend\manage.py check
 .\.venv\Scripts\python.exe backend\manage.py makemigrations --check --dry-run
 .\.venv\Scripts\python.exe backend\manage.py check_launch_content
-.\.venv\Scripts\python.exe backend\manage.py test apps.core apps.catalog apps.customers apps.leads apps.orders apps.payments apps.fiscal apps.refunds apps.imports apps.notifications
+.\.venv\Scripts\python.exe backend\manage.py test apps.core apps.catalog apps.customers apps.leads apps.orders apps.payments apps.fiscal apps.refunds apps.imports apps.notifications apps.warehouse
 $env:PYTHONUTF8 = "1"
 .\.venv\Scripts\python.exe -m pip_audit -r backend\requirements.txt
 npm.cmd run typecheck

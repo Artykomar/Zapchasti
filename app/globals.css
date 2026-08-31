@@ -3,15 +3,47 @@
   --surface: #ffffff;
   --surface-soft: #eef1f3;
   --text: #1d252b;
+  --ink: var(--text);
   --muted: #5b6870;
   --line: #d8dee2;
   --accent: #c5162e;
   --accent-strong: #9d1023;
   --teal: #167f86;
   --teal-dark: #0b5960;
+  --teal-deep: #0b5960;
+  --teal-soft: #e2f2f2;
   --steel: #2f3d46;
+  --steel-bg: #2f3d46;
   --dark: #202a31;
+  --header-glass: rgba(255, 255, 255, 0.96);
+  --success-soft: #eef7f4;
+  --table-soft: #fafafa;
   --shadow: 0 16px 38px rgba(24, 32, 36, 0.14);
+  color-scheme: light;
+}
+
+html[data-theme="dark"] {
+  --bg: #10181c;
+  --surface: #18242a;
+  --surface-soft: #213038;
+  --text: #edf4f5;
+  --ink: var(--text);
+  --muted: #a6b6bc;
+  --line: #34474f;
+  --accent: #ed3850;
+  --accent-strong: #ff7184;
+  --teal: #36a4aa;
+  --teal-dark: #72ced1;
+  --teal-deep: #247f85;
+  --teal-soft: #19383d;
+  --steel: #d6e2e5;
+  --steel-bg: #2f3d46;
+  --dark: #0d1519;
+  --header-glass: rgba(24, 36, 42, 0.96);
+  --success-soft: #19342f;
+  --table-soft: #142026;
+  --shadow: 0 18px 44px rgba(0, 0, 0, 0.34);
+  color-scheme: dark;
 }
 
 * {
@@ -69,7 +101,7 @@ button,
   position: sticky;
   top: 0;
   z-index: 20;
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--header-glass);
   border-bottom: 1px solid var(--line);
   backdrop-filter: blur(14px);
 }
@@ -149,6 +181,113 @@ button,
   display: inline-flex;
   align-items: center;
   gap: 10px;
+}
+
+.theme-switch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 12px;
+  color: var(--teal-dark);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.theme-switch:hover {
+  border-color: var(--teal);
+  background: var(--surface-soft);
+}
+
+.admin-login-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 14px;
+  color: var(--teal-dark);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.admin-login-link:hover {
+  border-color: var(--teal);
+  background: var(--surface-soft);
+}
+
+.cookie-notice {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 100;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 16px;
+  width: min(680px, calc(100vw - 48px));
+  padding: 20px;
+  color: var(--steel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 18px 50px rgba(24, 45, 52, 0.2);
+}
+
+.cookie-notice__icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  color: #fff;
+  border-radius: 50%;
+  background: var(--teal);
+}
+
+.cookie-notice__content strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--ink);
+  font-size: 16px;
+}
+
+.cookie-notice__content p {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.cookie-notice__content a {
+  color: var(--teal-dark);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.cookie-notice button {
+  min-height: 42px;
+  padding: 0 18px;
+  color: #fff;
+  border: 0;
+  border-radius: 8px;
+  background: var(--teal);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cookie-notice button:hover {
+  background: var(--teal-deep);
 }
 
 .cart-link {
@@ -367,7 +506,7 @@ h3 {
   padding: 0 12px;
   outline: 0;
   color: var(--text);
-  background: #fff;
+  background: var(--surface);
 }
 
 .parts-search input:focus,
@@ -504,7 +643,7 @@ h3 {
   border-radius: 8px;
   padding: 0 12px;
   color: var(--text);
-  background: #fff;
+  background: var(--surface);
 }
 
 .brand-cloud {
@@ -537,7 +676,7 @@ h3 {
   width: calc(20% - 8px);
   min-width: 170px;
   min-height: 76px;
-  background: #fff;
+  background: var(--surface);
 }
 
 .brand-cloud a span {
@@ -560,7 +699,7 @@ h3 {
   padding: 0 14px;
   border-radius: 8px;
   color: #fff;
-  background: var(--steel);
+  background: var(--steel-bg);
   align-self: end;
 }
 
@@ -667,7 +806,7 @@ h3 {
   padding: 0 9px;
   border-radius: 8px;
   color: var(--teal-dark);
-  background: #e2f2f2;
+  background: var(--teal-soft);
   font-size: 12px;
   font-weight: 800;
 }
@@ -946,7 +1085,7 @@ dd {
   border-radius: 8px;
   padding: 0 12px;
   color: var(--text);
-  background: #fff;
+  background: var(--surface);
 }
 
 .contact-item {
@@ -969,7 +1108,7 @@ dd {
   position: relative;
   min-height: 320px;
   height: min(52vw, 430px);
-  background: #eef7f4;
+  background: var(--success-soft);
 }
 
 .two-gis-map__viewport canvas {
@@ -989,7 +1128,7 @@ dd {
   background:
     linear-gradient(90deg, rgba(24, 132, 126, 0.08) 1px, transparent 1px),
     linear-gradient(rgba(24, 132, 126, 0.08) 1px, transparent 1px),
-    #eef7f4;
+    var(--success-soft);
   background-size: 34px 34px;
 }
 
@@ -1208,7 +1347,7 @@ dd {
   padding: 0 10px;
   border-radius: 8px;
   color: var(--teal-dark);
-  background: #e2f2f2;
+  background: var(--teal-soft);
   font-weight: 800;
 }
 
@@ -1307,6 +1446,24 @@ dd {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface-soft);
+}
+
+html[data-theme="dark"] .gear-backdrop {
+  background:
+    radial-gradient(circle at center, transparent 0 23%, rgba(114, 206, 209, 0.13) 24% 31%, transparent 32% 44%, rgba(114, 206, 209, 0.1) 45% 57%, transparent 58%),
+    repeating-conic-gradient(from 9deg, rgba(114, 206, 209, 0.13) 0deg 8deg, transparent 8deg 16deg);
+}
+
+html[data-theme="dark"] .two-gis-map__fallback {
+  background:
+    linear-gradient(90deg, rgba(54, 164, 170, 0.12) 1px, transparent 1px),
+    linear-gradient(rgba(54, 164, 170, 0.12) 1px, transparent 1px),
+    var(--success-soft);
+  background-size: 34px 34px;
+}
+
+html[data-theme="dark"] .hero__content {
+  color: var(--text);
 }
 
 .cart-item.cart-item--editable {
@@ -1750,7 +1907,7 @@ dd {
 
 .admin-status--done {
   color: #fff;
-  background: var(--steel);
+  background: var(--steel-bg);
 }
 
 .admin-status--cancelled {
@@ -1888,7 +2045,7 @@ dd {
 .admin-events {
   border-top: 1px solid var(--line);
   padding: 14px 18px 18px;
-  background: #fafafa;
+  background: var(--table-soft);
 }
 
 .admin-events summary {
@@ -1927,7 +2084,7 @@ dd {
   border-radius: 8px;
   padding: 0 12px;
   color: var(--text);
-  background: #fff;
+  background: var(--surface);
 }
 
 .admin-comment-form textarea {
@@ -2220,6 +2377,19 @@ dd {
     grid-template-columns: 1fr;
   }
 
+  .cookie-notice {
+    right: 12px;
+    bottom: 12px;
+    grid-template-columns: auto minmax(0, 1fr);
+    width: calc(100vw - 24px);
+    padding: 16px;
+  }
+
+  .cookie-notice button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
   .cart-item.cart-item--editable {
     grid-template-columns: 1fr;
     gap: 14px;
@@ -2263,6 +2433,10 @@ dd {
   .header-actions,
   .cart-link {
     width: 100%;
+  }
+
+  .admin-login-link {
+    flex: 1 1 auto;
   }
 
   .icon-link {
@@ -2315,4 +2489,28 @@ dd {
     align-items: flex-start;
     flex-direction: column;
   }
+}
+
+/* These component rules live after the responsive layer so the shared dark
+   palette wins everywhere, including narrow layouts. */
+html[data-theme="dark"] .hero {
+  background:
+    linear-gradient(90deg, rgba(16, 24, 28, 0.98) 0%, rgba(16, 24, 28, 0.88) 48%, rgba(16, 24, 28, 0.62) 100%),
+    linear-gradient(135deg, #152229 0%, #253941 52%, #10181c 100%);
+}
+
+html[data-theme="dark"] .hero__overlay {
+  background:
+    linear-gradient(90deg, rgba(16, 24, 28, 0.96), rgba(16, 24, 28, 0.76) 48%, rgba(16, 24, 28, 0.32)),
+    repeating-linear-gradient(0deg, rgba(214, 226, 229, 0.035) 0 1px, transparent 1px 34px);
+}
+
+html[data-theme="dark"] .product-detail__visual {
+  background:
+    radial-gradient(circle at 30% 24%, rgba(54, 164, 170, 0.18), transparent 32%),
+    linear-gradient(135deg, #213038, #111a1f);
+}
+
+html[data-theme="dark"] .admin-status--waiting_customer {
+  color: #291b05;
 }
